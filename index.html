@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NextArc | Athlete & Creator Marketplace</title>
+    <meta name="description" content="The marketplace for athletes to commission content from professional creators. Post projects, receive offers, and get high-quality content delivered." />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nextarc.studio/">
+    <meta property="og:title" content="NextArc | Athlete & Creator Marketplace">
+    <meta property="og:description" content="The marketplace for athletes to commission content from professional creators.">
+    <meta property="og:image" content="https://picsum.photos/1200/630?grayscale&blur=2">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://nextarc.studio/">
+    <meta property="twitter:title" content="NextArc | Athlete & Creator Marketplace">
+    <meta property="twitter:description" content="The marketplace for athletes to commission content from professional creators.">
+    <meta property="twitter:image" content="https://picsum.photos/1200/630?grayscale&blur=2">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #050810;
+        color: #E6E6E6;
+      }
+      .noise-bg {
+        position: relative;
+      }
+      .noise-bg::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="a" x="0" y="0" width="100%" height="100%"><feTurbulence baseFrequency=".7" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23a)"/></svg>');
+        opacity: 0.025;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .ember-glow {
+        text-shadow: 0 0 8px rgba(255, 77, 0, 0.7), 0 0 16px rgba(255, 77, 0, 0.5);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@hookform/resolvers/": "https://aistudiocdn.com/@hookform/resolvers@^5.2.2/",
+    "zod": "https://aistudiocdn.com/zod@^4.1.12",
+    "tailwind-merge": "https://aistudiocdn.com/tailwind-merge@^3.4.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.5",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0",
+    "react-hook-form": "https://aistudiocdn.com/react-hook-form@^7.66.0",
+    "@radix-ui/react-slot": "https://aistudiocdn.com/@radix-ui/react-slot@^1.2.4",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
+    "class-variance-authority": "https://aistudiocdn.com/class-variance-authority@^0.7.1"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
