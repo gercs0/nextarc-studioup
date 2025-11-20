@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Menu, X, User as UserIcon, LogOut, LayoutDashboard, Bell, Edit3, Settings, Crown } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 
 const Logo = () => (
@@ -226,27 +226,28 @@ const Header: React.FC = () => {
                         <div className="px-2 space-y-2">
                            {currentUser ? (
                                 <>
-                                 <div className="flex justify-between items-center">
-                                    <div className="px-2 py-2 text-white">{currentUser.name}</div>
-                                    <NotificationBell />
+                                 <div className="flex items-center px-2 py-2 gap-2">
+                                    <div className="text-base font-medium text-white">
+                                        {currentUser.name}
+                                    </div>
+                                    <div className="text-xs px-2 py-0.5 rounded bg-neutral-800 text-gray-400 capitalize">{currentUser.role}</div>
                                  </div>
-                                  <Link to="/dashboard" className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-neutral-800 hover:text-white" onClick={() => setIsOpen(false)}>
-                                      Dashboard
-                                  </Link>
-                                 <Button onClick={() => { logout(); setIsOpen(false); }} variant="secondary" className="w-full">
-                                    Log Out
-                                </Button>
+                                 <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-neutral-700" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                                 {currentUser.role === 'creator' && (
+                                     <>
+                                     <Link to={`/creator/${currentUser.id}`} className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-neutral-700" onClick={() => setIsOpen(false)}>My Public Profile</Link>
+                                     <Link to="/pro" className="block px-3 py-2 rounded-md text-base font-medium text-yellow-400 hover:text-yellow-300 hover:bg-neutral-700" onClick={() => setIsOpen(false)}>Go Pro</Link>
+                                     </>
+                                 )}
+                                 <Link to="/settings" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-neutral-700" onClick={() => setIsOpen(false)}>Settings</Link>
+                                 <button className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-neutral-700" onClick={() => { logout(); setIsOpen(false); }}>Log Out</button>
                                 </>
-                            ) : (
-                                <div className="flex flex-col gap-2">
-                                    <Button asChild variant="outline" className="w-full">
-                                        <Link to="/login" onClick={() => setIsOpen(false)}>Log In</Link>
-                                    </Button>
-                                    <Button asChild className="w-full">
-                                        <Link to="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
-                                    </Button>
-                                </div>
-                            )}
+                           ) : (
+                                <>
+                                    <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-neutral-700" onClick={() => setIsOpen(false)}>Log In</Link>
+                                    <Link to="/signup" className="block px-3 py-2 rounded-md text-base font-medium text-white bg-[#FF4D00] hover:bg-[#FF4D00]/90" onClick={() => setIsOpen(false)}>Sign Up</Link>
+                                </>
+                           )}
                         </div>
                     </div>
                 </div>

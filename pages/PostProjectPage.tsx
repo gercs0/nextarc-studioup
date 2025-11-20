@@ -15,7 +15,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { UploadCloud, X, ArrowLeft, ArrowRight, User } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const projectSchema = z.object({
   athleteName: z.string().min(2, "Name is required"),

@@ -9,7 +9,7 @@ import { incrementCounter } from '../services/countersService';
 import { useToast } from '../hooks/useToast';
 import Rating from '../components/ui/Rating';
 import { Check, Clock, Inbox, User, DollarSign, Briefcase, TrendingUp, Send } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import ProjectWorkspace from '../components/ProjectWorkspace';
 import { Textarea } from '../components/ui/Textarea';
 import { cn } from '../lib/utils';

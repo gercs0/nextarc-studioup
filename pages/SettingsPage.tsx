@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from '../components/ui/Button';
 import { ShieldCheck, Lock, User } from 'lucide-react';

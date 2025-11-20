@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Project, Offer } from '../../types';
+import { Project, Offer } from '../types';
 import { Button } from './ui/Button';
 import { PLATFORM_FEE_PERCENTAGE } from '../constants';
 import { Loader2 } from 'lucide-react';

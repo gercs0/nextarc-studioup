@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
-import { Project } from '../../types';
+import { Project } from '../types';
 import { Calendar, DollarSign, Bookmark, CheckCircle, Star, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import { Button } from './ui/Button';
 
 interface ProjectCardProps {

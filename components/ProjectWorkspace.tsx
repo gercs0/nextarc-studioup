@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Project, Deliverable, Milestone } from '../../types';
+import { Project, Deliverable, Milestone } from '../types';
 import { useProjects } from '../hooks/useProjects';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { Button } from './ui/Button';
@@ -204,7 +204,7 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                            {del.status === 'revision_requested' && (
                                <div className="mt-2 text-xs italic text-yellow-300 bg-yellow-900/30 p-2 rounded">
                                    <strong>Revision Note:</strong> {del.revisionComment}
-                               </div>
+                                </div>
                            )}
                            {currentUser?.role === 'athlete' && del.status === 'submitted' && (
                                <div className="mt-3 pt-3 border-t border-neutral-700/50 flex justify-end gap-2">

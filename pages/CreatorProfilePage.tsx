@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCreators } from '../hooks/useCreators';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import Rating from '../components/ui/Rating';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft, MessageSquare, Briefcase, CheckCircle, Loader2 } from 'lucide-react';

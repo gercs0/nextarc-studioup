@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Project, Offer } from '../../types';
-import { useToast } from '../../hooks/useToast';
-import { useAuth } from '../../context/AuthContext';
+import { Project, Offer } from '../types';
+import { useToast } from '../hooks/useToast';
+import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
