@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -37,6 +37,7 @@ const LoginPage: React.FC = () => {
     const [adminPassword, setAdminPassword] = useState('');
     const [adminError, setAdminError] = useState('');
     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+    const googleButtonRef = useRef<HTMLDivElement>(null);
 
     // Check if the provided ID looks like a valid Google OAuth Client ID
     const hasValidGoogleClientId = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 0 && GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com');
@@ -66,30 +67,33 @@ const LoginPage: React.FC = () => {
         loadGoogleScript();
     }, []);
 
+    const handleGoogleCallback = useCallback(async (response: any) => {
+        try {
+            await loginWithGoogle(response);
+            addToast("Google Login successful!", "success");
+            navigate('/dashboard');
+        } catch (error: any) {
+            addToast(error.message || "Google Login failed", "error");
+        }
+    }, [loginWithGoogle, addToast, navigate]);
+
     useEffect(() => {
-        if (googleScriptLoaded && window.google && hasValidGoogleClientId) {
+        if (googleScriptLoaded && window.google && hasValidGoogleClientId && googleButtonRef.current) {
             try {
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
-                    callback: async (response: any) => {
-                        try {
-                            await loginWithGoogle(response);
-                            addToast("Google Login successful!", "success");
-                            navigate('/dashboard');
-                        } catch (error: any) {
-                            addToast(error.message || "Google Login failed", "error");
-                        }
-                    }
+                    callback: handleGoogleCallback
                 });
+                // Fixed error: width cannot be "100%", it must be pixel value string or left default
                 window.google.accounts.id.renderButton(
-                    document.getElementById("googleSignInDiv"),
-                    { theme: "outline", size: "large", width: "100%" }
+                    googleButtonRef.current,
+                    { theme: "outline", size: "large" } 
                 );
             } catch (e) {
                 console.error("Error initializing Google Sign-In", e);
             }
         }
-    }, [googleScriptLoaded, loginWithGoogle, addToast, navigate, hasValidGoogleClientId]);
+    }, [googleScriptLoaded, hasValidGoogleClientId, handleGoogleCallback]);
 
     const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
         setIsLoading(true);
@@ -107,7 +111,6 @@ const LoginPage: React.FC = () => {
     const handleDemoGoogleLogin = async () => {
         try {
              // Create a fake credential that mimics the Google JWT structure
-             // Header.Payload.Signature
              const fakePayload = {
                  email: "demo_athlete@gmail.com",
                  name: "Demo Athlete",
@@ -222,8 +225,10 @@ const LoginPage: React.FC = () => {
                   </div>
                 </div>
                 
-                <div id="googleSignInDiv" className="flex justify-center min-h-[40px]">
-                    {!hasValidGoogleClientId && (
+                <div className="flex justify-center min-h-[40px]">
+                    {hasValidGoogleClientId ? (
+                        <div ref={googleButtonRef} className="w-full flex justify-center"></div>
+                    ) : (
                         <button 
                             onClick={handleDemoGoogleLogin}
                             className="flex items-center justify-center w-full bg-white text-gray-700 font-medium py-2 px-4 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
