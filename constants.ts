@@ -11,12 +11,12 @@ export const SERVICE_OPTIONS = [
 
 export const PLATFORM_FEE_PERCENTAGE = 0.08; // 8%
 
-// To get a real Google Client ID:
+// To get a real Google Client ID (Required for Google Sign-In to work):
 // 1. Go to https://console.cloud.google.com/
 // 2. Create a project & configure OAuth consent screen
 // 3. Create credentials > OAuth client ID > Web application
-// 4. Add your domain (e.g., localhost, vercel.app) to "Authorized Javascript Origins"
-// 5. Paste the Client ID below (it usually ends in .apps.googleusercontent.com)
+// 4. Add your domain (e.g., http://localhost:5173 or your deployed URL) to "Authorized Javascript Origins"
+// 5. Paste the Client ID below (It looks like: 123456-abcde.apps.googleusercontent.com)
 export const GOOGLE_CLIENT_ID: string = ""; 
 
 export const MOCK_CREATORS = [

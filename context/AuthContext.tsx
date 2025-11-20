@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import { User, UserRole } from '../types';
-import { MOCK_CREATORS, GOOGLE_CLIENT_ID } from '../constants';
+import { GOOGLE_CLIENT_ID } from '../constants';
 import { sendEmail } from '../services/emailService';
 import { parseJwt } from '../lib/utils';
 
@@ -32,33 +32,8 @@ const getUsersFromStorage = (): User[] => {
         if (storedUsers) {
             return JSON.parse(storedUsers);
         }
-        // Initialize with mock creators as users so they can log in
-        const initialUsers: User[] = MOCK_CREATORS.map(creator => ({
-            id: creator.id,
-            name: creator.username,
-            email: `${creator.username.toLowerCase()}@nextarc.io`,
-            password: 'password123', 
-            role: 'creator',
-            verified: true, 
-            isVerified: true,
-            twoFactorEnabled: false,
-            savedProjects: [],
-        }));
-        // Add a default athlete
-        initialUsers.push({
-            id: 'athlete-abc',
-            name: 'Alex Athlete',
-            email: 'athlete@nextarc.io',
-            password: 'password123',
-            role: 'athlete',
-            verified: true,
-            isVerified: false, 
-            twoFactorEnabled: false,
-            savedProjects: [],
-        });
-
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialUsers));
-        return initialUsers;
+        // Start with an empty list for a real production feel
+        return [];
     } catch (error) {
         console.error("Failed to initialize users", error);
         return [];
@@ -80,9 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [users, setUsers] = useState<User[]>(getUsersFromStorage);
 
   useEffect(() => {
-    if (users.length > 0) {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-    }
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   }, [users]);
 
   // Sync current user with users list in case of updates

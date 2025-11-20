@@ -1,7 +1,6 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Project, Offer, ProjectStatus, Message, Deliverable, Question, Dispute, Milestone } from '../types';
-import { SEED_PROJECTS } from '../data/seed';
 import { sendEmail } from '../services/emailService';
 import { useAuth } from './AuthContext';
 
@@ -44,9 +43,8 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch (error) {
           console.error("Could not parse projects from localStorage.", error);
       }
-      // If no valid data, return seed and save it immediately
-      localStorage.setItem('projects', JSON.stringify(SEED_PROJECTS));
-      return SEED_PROJECTS;
+      // Start with an empty list for a real production feel
+      return [];
   });
 
   const [loading, setLoading] = useState(false);

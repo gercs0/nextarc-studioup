@@ -9,7 +9,6 @@ import { useToast } from '../hooks/useToast';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { cn } from '../lib/utils';
-import { UserRole } from '../types';
 import { KeyRound } from 'lucide-react';
 import { GOOGLE_CLIENT_ID } from '../constants';
 import { Logo } from '../components/ui/Logo';
@@ -39,8 +38,6 @@ const LoginPage: React.FC = () => {
     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
     const googleButtonRef = useRef<HTMLDivElement>(null);
 
-    // Check if the provided ID looks like a valid Google OAuth Client ID
-    const hasValidGoogleClientId = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 0 && GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com');
     const isAdminLogin = new URLSearchParams(location.search).get('admin') === 'true';
 
     const { register, handleSubmit, formState: { errors }, watch } = useForm<LoginFormData>({
@@ -55,7 +52,6 @@ const LoginPage: React.FC = () => {
                 setGoogleScriptLoaded(true);
                 return;
             }
-            // Script is usually loaded via index.html, but check periodically
             const interval = setInterval(() => {
                 if (window.google) {
                     setGoogleScriptLoaded(true);
@@ -73,27 +69,33 @@ const LoginPage: React.FC = () => {
             addToast("Google Login successful!", "success");
             navigate('/dashboard');
         } catch (error: any) {
+            console.error("Google Login Error:", error);
             addToast(error.message || "Google Login failed", "error");
         }
     }, [loginWithGoogle, addToast, navigate]);
 
     useEffect(() => {
-        if (googleScriptLoaded && window.google && hasValidGoogleClientId && googleButtonRef.current) {
+        // Only attempt to render the button if we have a potentially valid Client ID
+        if (googleScriptLoaded && window.google && googleButtonRef.current && GOOGLE_CLIENT_ID) {
             try {
+                // Clear any existing button to prevent duplicates
+                googleButtonRef.current.innerHTML = '';
+
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleCallback
+                    callback: handleGoogleCallback,
+                    auto_select: false
                 });
-                // Fixed error: width cannot be "100%", it must be pixel value string or left default
+                
                 window.google.accounts.id.renderButton(
                     googleButtonRef.current,
-                    { theme: "outline", size: "large" } 
+                    { theme: "outline", size: "large", width: "300" } 
                 );
             } catch (e) {
                 console.error("Error initializing Google Sign-In", e);
             }
         }
-    }, [googleScriptLoaded, hasValidGoogleClientId, handleGoogleCallback]);
+    }, [googleScriptLoaded, handleGoogleCallback]);
 
     const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
         setIsLoading(true);
@@ -105,27 +107,6 @@ const LoginPage: React.FC = () => {
             addToast(error.message || "Failed to log in", "error");
         } finally {
             setIsLoading(false);
-        }
-    };
-    
-    const handleDemoGoogleLogin = async () => {
-        try {
-             // Create a fake credential that mimics the Google JWT structure
-             const fakePayload = {
-                 email: "demo_athlete@gmail.com",
-                 name: "Demo Athlete",
-                 picture: "https://lh3.googleusercontent.com/a/default-user=s96-c",
-                 sub: "1029384756"
-             };
-             // Base64 encode the payload for the JWT middle part
-             const encodedPayload = btoa(JSON.stringify(fakePayload));
-             const fakeCredential = `header.${encodedPayload}.signature`;
-
-             await loginWithGoogle({ credential: fakeCredential });
-             addToast("Demo Google Login successful!", "success");
-             navigate('/dashboard');
-        } catch (error: any) {
-            addToast("Demo login failed", "error");
         }
     };
 
@@ -216,33 +197,23 @@ const LoginPage: React.FC = () => {
                         {isLoading ? 'Logging In...' : 'Log In'}
                     </Button>
                 </form>
-                 <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-neutral-700" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-neutral-900 px-2 text-neutral-400">Or continue with</span>
-                  </div>
-                </div>
                 
-                <div className="flex justify-center min-h-[40px]">
-                    {hasValidGoogleClientId ? (
-                        <div ref={googleButtonRef} className="w-full flex justify-center"></div>
-                    ) : (
-                        <button 
-                            onClick={handleDemoGoogleLogin}
-                            className="flex items-center justify-center w-full bg-white text-gray-700 font-medium py-2 px-4 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
-                        >
-                            <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
-                                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
-                                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
-                                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
-                            </svg>
-                            Sign in with Google (Demo)
-                        </button>
-                    )}
-                </div>
+                {GOOGLE_CLIENT_ID && (
+                    <>
+                        <div className="relative my-6">
+                          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-neutral-700" />
+                          </div>
+                          <div className="relative flex justify-center text-sm">
+                            <span className="bg-neutral-900 px-2 text-neutral-400">Or continue with</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-center min-h-[40px]">
+                            <div ref={googleButtonRef} className="flex justify-center"></div>
+                        </div>
+                    </>
+                )}
 
                 <p className="mt-6 text-center text-sm text-gray-400">
                     Don't have an account?{' '}

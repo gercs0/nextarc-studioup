@@ -1,7 +1,6 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Creator, User, Review } from '../types';
-import { MOCK_CREATORS } from '../constants';
 
 interface CreatorsContextType {
   creators: Creator[];
@@ -26,7 +25,8 @@ export const CreatorsProvider: React.FC<{ children: ReactNode }> = ({ children }
       } catch (error) {
           console.error("Could not parse creators from localStorage", error);
       }
-      return MOCK_CREATORS;
+      // Start with an empty list for a real production feel
+      return [];
   });
   
   const [loading, setLoading] = useState(false);
