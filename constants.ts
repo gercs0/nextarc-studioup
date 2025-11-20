@@ -11,6 +11,10 @@ export const SERVICE_OPTIONS = [
 
 export const PLATFORM_FEE_PERCENTAGE = 0.08; // 8%
 
+// REPLACE THIS WITH YOUR ACTUAL GOOGLE CLIENT ID FROM GOOGLE CLOUD CONSOLE
+// If left blank or invalid, Google Login will not initialize correctly.
+export const GOOGLE_CLIENT_ID: string = "gen-lang-client-0969926605"; 
+
 export const MOCK_CREATORS = [
     {
         id: 'creator-123',

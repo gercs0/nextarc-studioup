@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,6 +12,7 @@ import { Input } from '../components/ui/Input';
 import { UserRole } from '../types';
 import { cn } from '../lib/utils';
 import { incrementCounter } from '../services/countersService';
+import { GOOGLE_CLIENT_ID } from '../constants';
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -28,12 +29,55 @@ const SignUpPage: React.FC = () => {
     const { addCreator } = useCreators();
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
+    const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
     const { register, handleSubmit, formState: { errors }, watch } = useForm<SignUpFormData>({
         resolver: zodResolver(signUpSchema)
     });
     
     const selectedRole = watch('role');
+
+    useEffect(() => {
+        const loadGoogleScript = () => {
+            if (window.google) {
+                setGoogleScriptLoaded(true);
+                return;
+            }
+            const interval = setInterval(() => {
+                if (window.google) {
+                    setGoogleScriptLoaded(true);
+                    clearInterval(interval);
+                }
+            }, 500);
+            return () => clearInterval(interval);
+        };
+        loadGoogleScript();
+    }, []);
+
+    useEffect(() => {
+        if (googleScriptLoaded && window.google && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_GOOGLE_CLIENT_ID_HERE") {
+            try {
+                window.google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: async (response: any) => {
+                        try {
+                            await loginWithGoogle(response);
+                            addToast("Google Sign-In successful!", "success");
+                            navigate('/dashboard');
+                        } catch (error: any) {
+                            addToast(error.message || "Google Sign-In failed", "error");
+                        }
+                    }
+                });
+                window.google.accounts.id.renderButton(
+                    document.getElementById("googleSignUpDiv"),
+                    { theme: "outline", size: "large", width: "100%", text: "signup_with" }
+                );
+            } catch (e) {
+                console.error("Error initializing Google Sign-In", e);
+            }
+        }
+    }, [googleScriptLoaded, loginWithGoogle, addToast, navigate]);
 
     const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
         setIsLoading(true);
@@ -44,7 +88,7 @@ const SignUpPage: React.FC = () => {
                 addCreator(newUser);
             }
 
-            await incrementCounter(data.role === 'athlete' ? 'athletes' : 'followers'); // Use followers for creators
+            await incrementCounter(data.role === 'athlete' ? 'athletes' : 'followers'); 
             addToast("Account created successfully!", "success");
             navigate('/dashboard');
         } catch (error: any) {
@@ -53,22 +97,6 @@ const SignUpPage: React.FC = () => {
             setIsLoading(false);
         }
     };
-    
-     const handleGoogleLogin = async () => {
-        setIsLoading(true);
-        try {
-            // Note: This simulated Google login does not create a new profile.
-            await loginWithGoogle();
-            addToast("Login successful!", "success");
-            navigate('/dashboard');
-        } catch (error: any)
- {
-            addToast(error.message || "Failed to sign in with Google", "error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
 
     return (
         <div className="max-w-md mx-auto">
@@ -116,7 +144,7 @@ const SignUpPage: React.FC = () => {
 
                     {selectedRole === 'creator' && (
                         <div className="text-xs text-center text-yellow-300 bg-yellow-900/50 p-3 rounded-md">
-                            Creator accounts require manual verification before you can make offers on projects. This may take 24-48 hours.
+                            Creator accounts require manual verification before you can make offers on projects.
                         </div>
                     )}
 
@@ -132,12 +160,15 @@ const SignUpPage: React.FC = () => {
                     <span className="bg-neutral-900/50 px-2 text-neutral-400">Or continue with</span>
                   </div>
                 </div>
-                <div>
-                     <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
-                        <svg className="mr-2 -ml-1 w-4 h-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 173.5 58.7L358.4 144.1C322.7 112.5 288.5 96 248 96c-88.8 0-160.1 71.1-160.1 160s71.3 160 160.1 160c97.5 0 140.1-83.9 143.8-124.2H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path></svg>
-                        Sign up with Google
-                    </Button>
+                
+                <div id="googleSignUpDiv" className="flex justify-center min-h-[40px]">
+                    {(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") && (
+                        <p className="text-xs text-red-400 text-center">
+                            Google Sign-In requires a Client ID in constants.ts to work on your deployed domain.
+                        </p>
+                    )}
                 </div>
+
                 <p className="mt-6 text-center text-sm text-gray-400">
                     Already have an account?{' '}
                     <Link to="/login" className="font-semibold text-[#FF4D00] hover:underline">

@@ -8,11 +8,6 @@ export const redirectToCheckout = async (project: Project, offer: Offer) => {
     
     const checkoutUrl = `/#/mock-checkout?project_id=${project.id}&offer_id=${offer.id}`;
 
-    // Simulate a brief delay then redirect
-    return new Promise<void>(resolve => {
-        setTimeout(() => {
-            window.location.href = checkoutUrl;
-            resolve();
-        }, 500);
-    });
+    // Immediate redirect
+    window.location.href = checkoutUrl;
 };

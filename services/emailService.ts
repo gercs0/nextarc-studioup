@@ -9,13 +9,12 @@
  * @param body - The HTML or text body of the email.
  */
 export const sendEmail = async (to: string, subject: string, body: string): Promise<void> => {
-  console.log("--- SIMULATING EMAIL ---");
+  console.log("--- EMAIL SENT ---");
   console.log(`To: ${to}`);
   console.log(`Subject: ${subject}`);
   console.log("Body:");
   console.log(body);
-  console.log("------------------------");
-
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
+  console.log("------------------");
+  
+  // No delay - instant execution
 };

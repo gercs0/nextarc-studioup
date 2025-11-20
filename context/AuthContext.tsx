@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
 import { User, UserRole } from '../types';
-import { MOCK_CREATORS } from '../constants';
+import { MOCK_CREATORS, GOOGLE_CLIENT_ID } from '../constants';
 import { sendEmail } from '../services/emailService';
+import { parseJwt } from '../lib/utils';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -9,7 +11,7 @@ interface AuthContextType {
   login: (email: string, password?: string, role?: UserRole) => Promise<User>;
   signup: (name: string, email: string, role: UserRole, password?: string) => Promise<User>;
   logout: () => void;
-  loginWithGoogle: () => Promise<User>;
+  loginWithGoogle: (credentialResponse: any) => Promise<User>;
   getAllUsers: () => Promise<User[]>;
   verifyCreator: (userId: string) => Promise<void>;
   getUserById: (userId: string) => User | undefined;
@@ -35,9 +37,9 @@ const getUsersFromStorage = (): User[] => {
             id: creator.id,
             name: creator.username,
             email: `${creator.username.toLowerCase()}@nextarc.io`,
-            password: 'password123', // Dummy password
+            password: 'password123', 
             role: 'creator',
-            verified: true, // Mock users are pre-verified
+            verified: true, 
             isVerified: true,
             twoFactorEnabled: false,
             savedProjects: [],
@@ -50,7 +52,7 @@ const getUsersFromStorage = (): User[] => {
             password: 'password123',
             role: 'athlete',
             verified: true,
-            isVerified: false, // Start as unverified
+            isVerified: false, 
             twoFactorEnabled: false,
             savedProjects: [],
         });
@@ -63,10 +65,18 @@ const getUsersFromStorage = (): User[] => {
     }
 };
 
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Initialize currentUser synchronously from localStorage to prevent auth flash
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+      try {
+          const session = localStorage.getItem(SESSION_STORAGE_KEY);
+          return session ? JSON.parse(session) : null;
+      } catch {
+          return null;
+      }
+  });
+  
+  const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<User[]>(getUsersFromStorage);
 
   useEffect(() => {
@@ -75,67 +85,62 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [users]);
 
+  // Sync current user with users list in case of updates
   useEffect(() => {
-    try {
-      const session = localStorage.getItem(SESSION_STORAGE_KEY);
-      if (session) {
-        const loggedInUser = JSON.parse(session);
-        // Make sure the user from session still exists in our user list
-        if (users.some(u => u.id === loggedInUser.id)) {
-            setCurrentUser(loggedInUser);
-        } else {
-             localStorage.removeItem(SESSION_STORAGE_KEY);
-        }
+      if (currentUser) {
+          const freshUser = users.find(u => u.id === currentUser.id);
+          if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
+              setCurrentUser(freshUser);
+              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(freshUser));
+          }
       }
-    } catch (error) {
-      console.error("Failed to load session", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [users]);
+  }, [users, currentUser]);
 
   const login = useCallback(async (email: string, password?: string, role?: UserRole): Promise<User> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-        if (user && user.password === password) {
-          setCurrentUser(user);
-          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
-          resolve(user);
-        } else {
-          reject(new Error("Invalid credentials or role mismatch."));
-        }
-      }, 500);
-    });
+    // No simulation delays - real synchronous check against local DB
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    
+    if (!user) {
+        throw new Error("User not found.");
+    }
+    
+    if (user.password !== password) {
+        throw new Error("Invalid password.");
+    }
+    
+    if (role && user.role !== role) {
+        throw new Error(`Account exists but is registered as a ${user.role}, not ${role}.`);
+    }
+
+    setCurrentUser(user);
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+    return user;
   }, [users]);
 
   const signup = useCallback(async (name: string, email: string, role: UserRole, password?: string): Promise<User> => {
-      return new Promise((resolve, reject) => {
-          setTimeout(() => {
-              if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-                  return reject(new Error("An account with this email already exists."));
-              }
-              const newUser: User = {
-                  id: `user_${Date.now()}`,
-                  name,
-                  email,
-                  role,
-                  password,
-                  verified: role === 'athlete', // Athletes are auto-verified, creators need manual verification
-                  isVerified: role === 'athlete', // for athlete verification badge
-                  twoFactorEnabled: false,
-                  savedProjects: [],
-              };
-              setUsers(prev => [...prev, newUser]);
-              setCurrentUser(newUser);
-              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newUser));
-              sendEmail(newUser.email, "Welcome to NextArc Studio!", `Hi ${newUser.name},\n\nWelcome! Your account has been created.`);
-              if (role === 'creator') {
-                sendEmail('admin@nextarc.io', 'New Creator Signup', `A new creator, ${newUser.name} (${newUser.email}), has signed up and is awaiting verification.`);
-              }
-              resolve(newUser);
-          }, 500);
-      });
+    // No simulation delays
+    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        throw new Error("An account with this email already exists.");
+    }
+    const newUser: User = {
+        id: `user_${Date.now()}`,
+        name,
+        email,
+        role,
+        password,
+        verified: role === 'athlete', // Athletes are auto-verified, creators need manual verification
+        isVerified: role === 'athlete', // for athlete verification badge
+        twoFactorEnabled: false,
+        savedProjects: [],
+    };
+    setUsers(prev => [...prev, newUser]);
+    setCurrentUser(newUser);
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newUser));
+    sendEmail(newUser.email, "Welcome to NextArc Studio!", `Hi ${newUser.name},\n\nWelcome! Your account has been created.`);
+    if (role === 'creator') {
+      sendEmail('admin@nextarc.io', 'New Creator Signup', `A new creator, ${newUser.name} (${newUser.email}), has signed up and is awaiting verification.`);
+    }
+    return newUser;
   }, [users]);
 
   const logout = useCallback(() => {
@@ -143,34 +148,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem(SESSION_STORAGE_KEY);
   }, []);
 
-  const loginWithGoogle = useCallback(async (): Promise<User> => {
-    // This is a simulation. In a real app, this would involve OAuth flow.
-    // We'll log in the mock athlete user.
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const mockAthlete = users.find(u => u.email === 'athlete@nextarc.io');
-        if (mockAthlete) {
-          setCurrentUser(mockAthlete);
-          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(mockAthlete));
-          resolve(mockAthlete);
-        } else {
-          reject(new Error("Mock user for Google Sign-In not found."));
-        }
-      }, 500);
-    });
+  const loginWithGoogle = useCallback(async (credentialResponse: any): Promise<User> => {
+    if (!credentialResponse.credential) {
+        throw new Error("Google authentication failed.");
+    }
+
+    const payload = parseJwt(credentialResponse.credential);
+    if (!payload) {
+        throw new Error("Invalid Google token.");
+    }
+
+    const email = payload.email;
+    const name = payload.name;
+    const picture = payload.picture;
+
+    // Check if user exists
+    let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user) {
+        // Create new user from Google data
+        user = {
+            id: `user_google_${Date.now()}`,
+            name: name,
+            email: email,
+            role: 'athlete', // Default to athlete for Google Login
+            verified: true,
+            isVerified: true,
+            twoFactorEnabled: false,
+            savedProjects: [],
+            password: 'google-auth-linked',
+        };
+        setUsers(prev => [...prev, user!]);
+    }
+
+    setCurrentUser(user);
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
+    return user;
   }, [users]);
 
   const getAllUsers = useCallback(async (): Promise<User[]> => {
-    return Promise.resolve(users);
+    return users;
   }, [users]);
 
   const verifyCreator = useCallback(async (userId: string): Promise<void> => {
-      return new Promise(resolve => {
-        setTimeout(() => {
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, verified: true } : u));
-            resolve();
-        }, 300);
-      });
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, verified: true } : u));
   }, []);
   
   const getUserById = useCallback((userId: string) => {
@@ -178,51 +199,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [users]);
   
   const verifyAthlete = useCallback(async (userId: string): Promise<void> => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: true } : u));
-            resolve();
-        }, 300);
-    });
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: true } : u));
   }, []);
 
   const saveProject = useCallback(async (projectId: string): Promise<void> => {
     if (!currentUser) return;
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const updatedUser = { ...currentUser, savedProjects: [...(currentUser.savedProjects || []), projectId] };
-            setCurrentUser(updatedUser);
-            setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
-            resolve();
-        }, 300);
-    });
+    const updatedUser = { ...currentUser, savedProjects: [...(currentUser.savedProjects || []), projectId] };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
   }, [currentUser]);
 
   const unsaveProject = useCallback(async (projectId: string): Promise<void> => {
     if (!currentUser) return;
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const updatedUser = { ...currentUser, savedProjects: (currentUser.savedProjects || []).filter(id => id !== projectId) };
-            setCurrentUser(updatedUser);
-            setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
-            resolve();
-        }, 300);
-    });
+    const updatedUser = { ...currentUser, savedProjects: (currentUser.savedProjects || []).filter(id => id !== projectId) };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
   }, [currentUser]);
   
   const toggle2FA = useCallback(async (enabled: boolean): Promise<void> => {
     if (!currentUser) return;
-    return new Promise(resolve => {
-        setTimeout(() => {
-            const updatedUser = { ...currentUser, twoFactorEnabled: enabled };
-            setCurrentUser(updatedUser);
-            setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-             localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
-            resolve();
-        }, 300);
-    });
+    const updatedUser = { ...currentUser, twoFactorEnabled: enabled };
+    setCurrentUser(updatedUser);
+    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
   }, [currentUser]);
 
 

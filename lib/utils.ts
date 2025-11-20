@@ -18,3 +18,11 @@ export const fileToBase64 = (file: File): Promise<string> => {
 export const sanitizeFileName = (fileName: string) => {
     return fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
 };
+
+export const parseJwt = (token: string) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+};

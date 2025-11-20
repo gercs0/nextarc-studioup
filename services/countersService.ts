@@ -12,22 +12,18 @@ const initialCounters: Counters = {
 };
 
 const getBaseCounters = async (): Promise<Counters> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      try {
-        const storedCounters = localStorage.getItem(COUNTERS_KEY);
-        if (storedCounters) {
-          resolve(JSON.parse(storedCounters));
-        } else {
-          localStorage.setItem(COUNTERS_KEY, JSON.stringify(initialCounters));
-          resolve(initialCounters);
-        }
-      } catch (error) {
-        console.error("Failed to get base counters", error);
-        resolve(initialCounters);
-      }
-    }, 100);
-  });
+  try {
+    const storedCounters = localStorage.getItem(COUNTERS_KEY);
+    if (storedCounters) {
+      return JSON.parse(storedCounters);
+    } else {
+      localStorage.setItem(COUNTERS_KEY, JSON.stringify(initialCounters));
+      return initialCounters;
+    }
+  } catch (error) {
+    console.error("Failed to get base counters", error);
+    return initialCounters;
+  }
 };
 
 export const getLiveCounters = async (): Promise<Counters> => {
@@ -36,7 +32,7 @@ export const getLiveCounters = async (): Promise<Counters> => {
     const followerFluctuation = Math.floor(Math.random() * 4) - 1; // -1, 0, 1, 2
     
     // In a real application, this would be an API call. Here we simulate.
-    const liveFollowers = (await getBaseCounters()).followers + followerFluctuation;
+    const liveFollowers = baseCounters.followers + followerFluctuation;
     
     return {
         ...baseCounters,
