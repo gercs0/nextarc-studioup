@@ -5,18 +5,7 @@ import { Button } from '../ui/Button';
 import { Menu, X, User as UserIcon, LogOut, LayoutDashboard, Bell, Edit3, Settings, Crown } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-
-const Logo = () => (
-    <Link to="/" className="flex items-center space-x-2">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-            <path d="M5.5 28V4H12.3L21.5 19.5V4H28V28H21.2L12 12.5V28H5.5Z" fill="currentColor"/>
-        </svg>
-        <div className="flex flex-col">
-            <span className="font-black text-xl tracking-tighter text-white">NextArc</span>
-            <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 -mt-1">STUDIO</span>
-        </div>
-    </Link>
-);
+import { Logo } from '../ui/Logo';
 
 const NotificationBell: React.FC = () => {
     const { notifications, unreadCount, markAllAsRead } = useNotifications();

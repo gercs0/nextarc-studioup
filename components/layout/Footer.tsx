@@ -2,10 +2,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Linkedin } from 'lucide-react';
+import { Logo } from '../ui/Logo';
 
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M22.28 6.51c-1.21-1.33-3.28-2.18-5.32-2.18h-1.63v11.55c0 1.28-.53 2.54-1.45 3.43-.92.89-2.17 1.4-3.48 1.4-1.31 0-2.56-.51-3.48-1.4-1-1-1.5-2.3-1.5-3.7v-5.9h3.12V8.09H6.41v5.9c0 2.25.9 4.35 2.5 5.92 1.6 1.57 3.7 2.43 5.9 2.43 2.2 0 4.3-.86 5.9-2.43 1.6-1.57 2.5-3.67 2.5-5.92V8.67c1.33.86 2.87 1.33 4.48 1.33v-3.5c-1.5-.07-2.9-.66-4.02-1.61z"/>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
     </svg>
 );
 
@@ -16,15 +17,7 @@ const Footer: React.FC = () => {
             <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 <div className="md:flex md:justify-between">
                     <div className="mb-6 md:mb-0">
-                        <Link to="/" className="flex items-center space-x-2">
-                             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                                <path d="M5.5 28V4H12.3L21.5 19.5V4H28V28H21.2L12 12.5V28H5.5Z" fill="currentColor"/>
-                            </svg>
-                            <div className="flex flex-col">
-                                <span className="font-black text-xl tracking-tighter text-white">NextArc</span>
-                                <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 -mt-1">STUDIO</span>
-                            </div>
-                        </Link>
+                        <Logo />
                         <p className="mt-2 text-sm text-gray-400 max-w-xs">The premier marketplace connecting elite athletes with world-class content creators.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-8 sm:gap-6 sm:grid-cols-3">

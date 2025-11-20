@@ -13,6 +13,7 @@ import { UserRole } from '../types';
 import { cn } from '../lib/utils';
 import { incrementCounter } from '../services/countersService';
 import { GOOGLE_CLIENT_ID } from '../constants';
+import { Logo } from '../components/ui/Logo';
 
 const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -30,6 +31,9 @@ const SignUpPage: React.FC = () => {
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+
+    // Check if the provided ID looks like a valid Google OAuth Client ID
+    const hasValidGoogleClientId = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID.length > 0 && GOOGLE_CLIENT_ID.includes('.apps.googleusercontent.com');
 
     const { register, handleSubmit, formState: { errors }, watch } = useForm<SignUpFormData>({
         resolver: zodResolver(signUpSchema)
@@ -55,7 +59,7 @@ const SignUpPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (googleScriptLoaded && window.google && GOOGLE_CLIENT_ID && GOOGLE_CLIENT_ID !== "YOUR_GOOGLE_CLIENT_ID_HERE") {
+        if (googleScriptLoaded && window.google && hasValidGoogleClientId) {
             try {
                 window.google.accounts.id.initialize({
                     client_id: GOOGLE_CLIENT_ID,
@@ -77,7 +81,7 @@ const SignUpPage: React.FC = () => {
                 console.error("Error initializing Google Sign-In", e);
             }
         }
-    }, [googleScriptLoaded, loginWithGoogle, addToast, navigate]);
+    }, [googleScriptLoaded, loginWithGoogle, addToast, navigate, hasValidGoogleClientId]);
 
     const onSubmit: SubmitHandler<SignUpFormData> = async (data) => {
         setIsLoading(true);
@@ -97,16 +101,35 @@ const SignUpPage: React.FC = () => {
             setIsLoading(false);
         }
     };
+    
+    const handleDemoGoogleLogin = async () => {
+        try {
+             // Create a fake credential that mimics the Google JWT structure
+             // Header.Payload.Signature
+             const fakePayload = {
+                 email: "demo_athlete@gmail.com",
+                 name: "Demo Athlete",
+                 picture: "https://lh3.googleusercontent.com/a/default-user=s96-c",
+                 sub: "1029384756"
+             };
+             // Base64 encode the payload for the JWT middle part
+             const encodedPayload = btoa(JSON.stringify(fakePayload));
+             const fakeCredential = `header.${encodedPayload}.signature`;
+
+             await loginWithGoogle({ credential: fakeCredential });
+             addToast("Demo Google Login successful!", "success");
+             navigate('/dashboard');
+        } catch (error: any) {
+            addToast("Demo login failed", "error");
+        }
+    };
 
     return (
         <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
-                 <Link to="/" className="inline-flex items-center space-x-2">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                        <path d="M5.5 28V4H12.3L21.5 19.5V4H28V28H21.2L12 12.5V28H5.5Z" fill="currentColor"/>
-                    </svg>
-                    <div className="flex flex-col text-left"><span className="font-black text-xl tracking-tighter text-white">NextArc</span><span className="text-xs font-semibold tracking-[0.2em] text-gray-400 -mt-1">STUDIO</span></div>
-                </Link>
+                <div className="flex justify-center">
+                    <Logo to="/" />
+                </div>
                 <h1 className="text-3xl font-bold tracking-tighter text-white mt-6">Create Your Account</h1>
                 <p className="text-gray-400">Join the premier marketplace for athletes and creators.</p>
             </div>
@@ -162,10 +185,19 @@ const SignUpPage: React.FC = () => {
                 </div>
                 
                 <div id="googleSignUpDiv" className="flex justify-center min-h-[40px]">
-                    {(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") && (
-                        <p className="text-xs text-red-400 text-center">
-                            Google Sign-In requires a Client ID in constants.ts to work on your deployed domain.
-                        </p>
+                    {!hasValidGoogleClientId && (
+                        <button 
+                            onClick={handleDemoGoogleLogin}
+                            className="flex items-center justify-center w-full bg-white text-gray-700 font-medium py-2 px-4 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors"
+                        >
+                            <svg className="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+                                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+                                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+                                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+                            </svg>
+                            Sign Up with Google (Demo)
+                        </button>
                     )}
                 </div>
 
