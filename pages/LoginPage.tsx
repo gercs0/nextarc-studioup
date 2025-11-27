@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,8 +34,6 @@ const LoginPage: React.FC = () => {
     const { login, loginWithGoogle } = useAuth();
     const { addToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [adminPassword, setAdminPassword] = useState('');
-    const [adminError, setAdminError] = useState('');
     const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
     const googleButtonRef = useRef<HTMLDivElement>(null);
 
@@ -65,14 +64,24 @@ const LoginPage: React.FC = () => {
 
     const handleGoogleCallback = useCallback(async (response: any) => {
         try {
-            await loginWithGoogle(response);
+            const user = await loginWithGoogle(response);
             addToast("Google Login successful!", "success");
-            navigate('/dashboard');
+            
+            if (isAdminLogin) {
+                if (user.isAdmin) {
+                    navigate('/admin');
+                } else {
+                    addToast("Access Denied: You do not have admin privileges.", "error");
+                    navigate('/dashboard');
+                }
+            } else {
+                navigate('/dashboard');
+            }
         } catch (error: any) {
             console.error("Google Login Error:", error);
             addToast(error.message || "Google Login failed", "error");
         }
-    }, [loginWithGoogle, addToast, navigate]);
+    }, [loginWithGoogle, addToast, navigate, isAdminLogin]);
 
     useEffect(() => {
         // Only attempt to render the button if we have a potentially valid Client ID
@@ -100,9 +109,19 @@ const LoginPage: React.FC = () => {
     const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
         setIsLoading(true);
         try {
-            await login(data.email, data.password, data.role);
+            const user = await login(data.email, data.password, data.role);
             addToast("Login successful!", "success");
-            navigate('/dashboard');
+
+            if (isAdminLogin) {
+                if (user.isAdmin) {
+                    navigate('/admin');
+                } else {
+                    addToast("Access Denied: You do not have admin privileges.", "error");
+                    navigate('/dashboard');
+                }
+            } else {
+                navigate('/dashboard');
+            }
         } catch (error: any) {
             addToast(error.message || "Failed to log in", "error");
         } finally {
@@ -110,62 +129,18 @@ const LoginPage: React.FC = () => {
         }
     };
 
-    const handleAdminSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (adminPassword === 'Gercso123@#') {
-            localStorage.setItem('isAdminAuthenticated', 'true');
-            addToast('Admin login successful!', 'success');
-            navigate('/admin');
-        } else {
-            setAdminError('Incorrect password. Access denied.');
-            setAdminPassword('');
-        }
-    };
-
-    if (isAdminLogin) {
-        return (
-             <div className="flex items-center justify-center" style={{ minHeight: '60vh' }}>
-                <div className="w-full max-w-md">
-                    <form onSubmit={handleAdminSubmit} className="bg-neutral-900/50 border border-neutral-800 shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
-                        <div className="text-center mb-6">
-                            <KeyRound className="mx-auto h-12 w-12 text-[#FF4D00]"/>
-                            <h1 className="text-2xl font-bold text-white mt-4">Admin Access Required</h1>
-                            <p className="text-gray-400 mt-2">Please enter the password to continue.</p>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-300 text-sm font-bold mb-2 sr-only" htmlFor="password">
-                                Password
-                            </label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••••••"
-                                value={adminPassword}
-                                onChange={(e) => setAdminPassword(e.target.value)}
-                                required
-                                autoFocus
-                            />
-                        </div>
-                        {adminError && <p className="text-red-500 text-xs italic mb-4 text-center">{adminError}</p>}
-                        <div className="flex items-center justify-center">
-                            <Button type="submit" className="w-full">
-                                Authenticate
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
                 <div className="flex justify-center">
                     <Logo to="/" />
                 </div>
-                <h1 className="text-3xl font-bold tracking-tighter text-white mt-6">Welcome Back</h1>
-                <p className="text-gray-400">Log in to manage your projects.</p>
+                <h1 className="text-3xl font-bold tracking-tighter text-white mt-6">
+                    {isAdminLogin ? 'Admin Login' : 'Welcome Back'}
+                </h1>
+                <p className="text-gray-400">
+                    {isAdminLogin ? 'Secure access for administrators.' : 'Log in to manage your projects.'}
+                </p>
             </div>
             <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg p-8">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -194,7 +169,7 @@ const LoginPage: React.FC = () => {
                         {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? 'Logging In...' : 'Log In'}
+                        {isLoading ? 'Logging In...' : (isAdminLogin ? 'Access Admin Panel' : 'Log In')}
                     </Button>
                 </form>
                 

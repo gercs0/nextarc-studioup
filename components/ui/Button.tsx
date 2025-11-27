@@ -5,25 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center rounded-lg text-sm font-bold uppercase tracking-wide ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 font-syne",
   {
     variants: {
       variant: {
         default:
-          "bg-[#FF4D00] text-white hover:bg-[#FF4D00]/90 shadow-[0_0_15px_rgba(255,77,0,0.5)]",
+          "bg-gradient-to-r from-[#FF4D00] to-[#FF6A00] text-white shadow-[0_0_20px_rgba(255,77,0,0.3)] hover:shadow-[0_0_30px_rgba(255,77,0,0.5)] hover:scale-[1.02] border border-white/10",
         destructive:
-          "bg-red-500 text-neutral-50 hover:bg-red-500/90",
+          "bg-red-600 text-white hover:bg-red-700 shadow-lg",
         outline:
-          "border border-input bg-transparent hover:bg-neutral-800 hover:text-neutral-50",
+          "border border-white/20 bg-transparent hover:bg-white/10 text-white hover:border-white/40 backdrop-blur-sm",
         secondary:
-          "bg-neutral-800 text-neutral-50 hover:bg-neutral-800/80",
-        ghost: "hover:bg-neutral-800 hover:text-neutral-50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-white text-black hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.3)]",
+        ghost: "hover:bg-white/10 hover:text-white text-gray-300",
+        link: "text-[#FF4D00] underline-offset-4 hover:underline",
+        glow: "bg-[#0A0A0A] border border-[#FF4D00]/50 text-[#FF4D00] shadow-[0_0_15px_rgba(255,77,0,0.15)] hover:shadow-[0_0_25px_rgba(255,77,0,0.3)] hover:bg-[#FF4D00]/10"
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8 text-base",
+        default: "h-11 px-6 py-2",
+        sm: "h-9 rounded-md px-3 text-xs",
+        lg: "h-14 rounded-xl px-10 text-base",
         icon: "h-10 w-10",
       },
     },
@@ -40,10 +41,10 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-// FIX: Renamed the rest parameter from '...rest' to '...props' to resolve TypeScript errors where 'variant' and 'size' were not being correctly inferred on the component's props. This aligns with standard patterns for this type of component.
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}

@@ -11,41 +11,30 @@ export const SERVICE_OPTIONS = [
 
 export const PLATFORM_FEE_PERCENTAGE = 0.08; // 8%
 
-// To get a real Google Client ID (Required for Google Sign-In to work):
-// 1. Go to https://console.cloud.google.com/
-// 2. Create a project & configure OAuth consent screen
-// 3. Create credentials > OAuth client ID > Web application
-// 4. Add your domain (e.g., http://localhost:5173 or your deployed URL) to "Authorized Javascript Origins"
-// 5. Paste the Client ID below (It looks like: 123456-abcde.apps.googleusercontent.com)
 export const GOOGLE_CLIENT_ID: string = ""; 
+
+// Supabase Configuration
+export const SUPABASE_URL = "https://eehfrgjcdimakprdkhgh.supabase.co";
+export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlaGZyZ2pjZGltYWtwcmRraGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3MTkyOTgsImV4cCI6MjA3OTI5NTI5OH0.Ob2Jzwd-wZrXf8NYocI_MGJsiOhjzHMxUHd5z1uKoSI";
 
 export const MOCK_CREATORS = [
     {
         id: 'creator-123',
         username: 'CreativePro',
         bio: 'Specializing in high-impact sports highlight reels and documentary shorts. 10+ years of experience working with professional athletes.',
-        profilePictureUrl: 'https://i.pravatar.cc/150?u=creator-123',
-        rating: 4.8,
-        ratingsCount: 25,
+        profilePictureUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&fit=crop',
+        rating: 4.9,
+        ratingsCount: 42,
         reviews: [],
         portfolio: [
             { id: 'p1', title: 'Jalen Green Summer Mixtape', description: 'A high-energy highlight reel showcasing pre-season training.', imageUrl: 'https://images.unsplash.com/photo-1628891890377-57374142f537?q=80&w=800' },
             { id: 'p2', title: 'Maria Sharapova Documentary', description: 'A short film on her comeback story.', imageUrl: 'https://images.unsplash.com/photo-1559521792-a37add0f535a?q=80&w=800' }
         ],
+        availability: 'Available',
+        isPro: true,
     },
-    {
-        id: 'creator-456',
-        username: 'PixelPerfect',
-        bio: 'Photographer and motion graphics artist. I bring a cinematic quality to every project, from on-field action to brand collaborations.',
-        profilePictureUrl: 'https://i.pravatar.cc/150?u=creator-456',
-        rating: 4.9,
-        ratingsCount: 18,
-        reviews: [],
-        portfolio: [
-             { id: 'p3', title: 'Nike "Air" Campaign', description: 'Action shots for a global sneaker launch.', imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800' },
-             { id: 'p4', title: 'Skate Culture Showcase', description: 'Gritty, authentic photography of local skate scene.', imageUrl: 'https://images.unsplash.com/photo-1547422690-384b2e2e9877?q=80&w=800' }
-        ],
-    }
 ];
 
-export const INITIAL_FOLLOWER_COUNT = 225; // Based on https://www.instagram.com/nextarc_media/
+export const MOCK_USERS = [];
+
+export const INITIAL_FOLLOWER_COUNT = 225;

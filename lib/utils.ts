@@ -1,6 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Creator, League } from "../types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -40,4 +41,20 @@ export const parseJwt = (token: string) => {
     console.error('Error parsing JWT', e);
     return null;
   }
+};
+
+export const calculateLeague = (creator: Partial<Creator>): League => {
+    // Logic for League System
+    // All-Star: 50+ jobs, > 4.8 rating (or specific flag)
+    // Pro: Verified (manual) or 20+ jobs
+    // Varsity: 5+ jobs, > 4.0 rating
+    // Rookie: < 5 jobs
+
+    const completed = creator.ratingsCount || 0; // Using ratings count as proxy for completed jobs for now
+    const rating = creator.rating || 0;
+
+    if (completed >= 50 && rating >= 4.8) return 'All-Star';
+    if (creator.isPro) return 'Pro';
+    if (completed >= 5 && rating >= 4.0) return 'Varsity';
+    return 'Rookie';
 };

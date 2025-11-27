@@ -149,8 +149,8 @@ const SignUpPage: React.FC = () => {
                     </div>
 
                     {selectedRole === 'creator' && (
-                        <div className="text-xs text-center text-yellow-300 bg-yellow-900/50 p-3 rounded-md">
-                            Creator accounts require manual verification before you can make offers on projects.
+                        <div className="text-xs text-center text-green-300 bg-green-900/30 p-3 rounded-md border border-green-800/50">
+                            Start working immediately. Build your portfolio to earn the Pro Verified badge later.
                         </div>
                     )}
 

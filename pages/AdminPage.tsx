@@ -44,8 +44,8 @@ const AdminPage: React.FC = () => {
             addToast('Creator verified successfully!', 'success');
             addNotification(
                 userId,
-                'Your creator account has been verified! You can now make offers.',
-                '/browse'
+                'Congratulations! You have been verified as a Professional Creator. Your profile now features the Verified badge.',
+                '/creator/' + userId
             );
             setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, verified: true } : u));
         } catch (error) {
@@ -60,7 +60,7 @@ const AdminPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12 relative">
                 <h1 className="text-4xl font-black tracking-tighter text-white">Admin Dashboard</h1>
-                <p className="mt-2 text-lg text-gray-400">Manage creator verifications and view all users.</p>
+                <p className="mt-2 text-lg text-gray-400">Manage verified badges and view user database.</p>
                 <div className="absolute top-0 right-0">
                     <Button variant="outline" size="sm" onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" /> Log Out
@@ -71,7 +71,7 @@ const AdminPage: React.FC = () => {
             {/* Pending Verifications */}
             <div className="mb-12">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-                    <Clock className="mr-3 h-6 w-6 text-yellow-400" /> Pending Creator Verifications
+                    <Clock className="mr-3 h-6 w-6 text-yellow-400" /> Pending Badge Requests
                 </h2>
                 <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg">
                     {loading ? (
@@ -85,7 +85,7 @@ const AdminPage: React.FC = () => {
                                         <p className="text-sm text-gray-400">{creator.email}</p>
                                     </div>
                                     <Button size="sm" onClick={() => handleVerify(creator.id)}>
-                                        <UserCheck className="mr-2 h-4 w-4" /> Verify
+                                        <UserCheck className="mr-2 h-4 w-4" /> Grant Verified Badge
                                     </Button>
                                 </li>
                             ))}
@@ -121,11 +121,11 @@ const AdminPage: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         {user.verified ? (
                                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-900 text-green-300">
-                                                Verified
+                                                Verified Pro
                                             </span>
                                         ) : (
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-900 text-yellow-300">
-                                                Pending
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-neutral-800 text-gray-400">
+                                                Standard
                                             </span>
                                         )}
                                     </td>

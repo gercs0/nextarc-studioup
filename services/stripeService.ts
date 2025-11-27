@@ -1,13 +1,38 @@
 
+
 import { Project, Offer } from '../types';
+import { supabase } from '../lib/supabase';
 
 export const redirectToCheckout = async (project: Project, offer: Offer) => {
-    // In a real app, you would call your backend here to create a Stripe Checkout Session
-    // and then redirect to the URL provided by Stripe.
-    // For this MVP, we will redirect to a mock checkout page.
+    // COMMERCIAL USE: Initiating real Stripe Checkout session via Supabase Edge Function.
+    // Ensure you have deployed the 'create-checkout-session' function and configured Stripe keys.
     
-    const checkoutUrl = `/#/mock-checkout?project_id=${project.id}&offer_id=${offer.id}`;
+    try {
+        const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+            body: {
+                projectId: project.id,
+                offerId: offer.id,
+                amount: offer.amount, // Amount in dollars, function should convert to cents
+                serviceName: project.serviceType,
+                customerEmail: project.email // Passed for pre-filling, optional
+            }
+        });
 
-    // Immediate redirect
-    window.location.href = checkoutUrl;
+        if (error) {
+            console.error("Error invoking checkout function:", error);
+            throw error;
+        }
+
+        if (data?.url) {
+            // Redirect to the real Stripe Checkout page
+            window.location.href = data.url;
+        } else {
+            throw new Error("No checkout URL returned from payment service.");
+        }
+
+    } catch (error) {
+        console.error("Stripe Checkout Failed:", error);
+        alert("Unable to initiate secure payment. Please ensure the payment backend is deployed and configured.");
+        // Note: We do not fallback to mock checkout here as the user requested "Live" behavior only.
+    }
 };

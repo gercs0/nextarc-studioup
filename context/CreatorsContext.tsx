@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Creator, User, Review } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface CreatorsContextType {
   creators: Creator[];
@@ -16,84 +17,129 @@ interface CreatorsContextType {
 export const CreatorsContext = createContext<CreatorsContextType | undefined>(undefined);
 
 export const CreatorsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [creators, setCreators] = useState<Creator[]>(() => {
-      try {
-          const localData = localStorage.getItem('creators');
-          if (localData) {
-              return JSON.parse(localData);
-          }
-      } catch (error) {
-          console.error("Could not parse creators from localStorage", error);
-      }
-      // Start with an empty list for a real production feel
-      return [];
-  });
-  
-  const [loading, setLoading] = useState(false);
+  const [creators, setCreators] = useState<Creator[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCreators = useCallback(async () => {
+    setLoading(true);
+    
+    // Fetch profiles where role is creator
+    // Also fetch related portfolio items and reviews
+    // Assumes tables: profiles, portfolio_items, reviews
+    
+    const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+            *,
+            portfolio_items (*),
+            reviews (*)
+        `)
+        .eq('role', 'creator');
+    
+    if (error) {
+        console.error("Error fetching creators:", error);
+        setLoading(false);
+        return;
+    }
+
+    const formattedCreators: Creator[] = data.map((p: any) => ({
+        id: p.id,
+        username: p.name, // Mapping name to username for display
+        bio: p.bio || 'No bio yet.',
+        profilePictureUrl: p.profile_picture_url || `https://i.pravatar.cc/150?u=${p.id}`,
+        rating: p.rating || 0,
+        ratingsCount: p.ratings_count || 0,
+        isPro: p.is_pro,
+        availability: p.availability || 'Available',
+        portfolio: (p.portfolio_items || []).map((i: any) => ({
+            id: i.id,
+            title: i.title,
+            description: i.description,
+            imageUrl: i.image_url
+        })),
+        reviews: (p.reviews || []).map((r: any) => ({
+            id: r.id,
+            projectId: r.project_id,
+            projectName: r.project_name,
+            athleteId: r.athlete_id,
+            athleteName: r.athlete_name,
+            rating: r.rating,
+            comment: r.comment,
+            timestamp: new Date(r.created_at).getTime()
+        }))
+    }));
+    
+    setCreators(formattedCreators);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('creators', JSON.stringify(creators));
-  }, [creators]);
+    fetchCreators();
+  }, [fetchCreators]);
 
   const addCreator = useCallback(async (user: User) => {
-        const existingCreator = creators.find(c => c.id === user.id);
-        if (existingCreator) return;
-
-        const newCreator: Creator = {
-            id: user.id,
-            username: user.name,
-            bio: 'Welcome to my profile! I am a content creator passionate about sports.',
-            profilePictureUrl: `https://i.pravatar.cc/150?u=${user.id}`,
-            rating: 0,
-            ratingsCount: 0,
-            reviews: [],
-            portfolio: [],
-            isPro: false,
-            availability: 'Available',
-        };
-        setCreators(prev => [...prev, newCreator]);
-  }, [creators]);
+      // This is redundant with AuthContext signup, but handles logic specific to creator list if separate table exists.
+      // Since we use 'profiles', user is already added.
+      // We might trigger a fetch just in case.
+      fetchCreators();
+  }, [fetchCreators]);
 
   const updateCreatorProfile = useCallback(async (creatorId: string, profileData: Partial<Pick<Creator, 'username' | 'bio' | 'profilePictureUrl'>>) => {
-        setCreators(prev => prev.map(creator =>
-            creator.id === creatorId ? { ...creator, ...profileData } : creator
-        ));
-  }, []);
+        const dbPayload: any = {};
+        if (profileData.username) dbPayload.name = profileData.username;
+        if (profileData.bio) dbPayload.bio = profileData.bio;
+        if (profileData.profilePictureUrl) dbPayload.profile_picture_url = profileData.profilePictureUrl;
+
+        const { error } = await supabase.from('profiles').update(dbPayload).eq('id', creatorId);
+        if (!error) fetchCreators();
+  }, [fetchCreators]);
 
   const addRating = useCallback(async (creatorId: string, reviewData: Omit<Review, 'id' | 'timestamp'>) => {
-        const newReview: Review = {
-          ...reviewData,
-          id: `rev_${Date.now()}`,
-          timestamp: Date.now(),
-        };
+        // 1. Insert Review
+        const { error } = await supabase.from('reviews').insert([{
+            creator_id: creatorId,
+            project_id: reviewData.projectId,
+            project_name: reviewData.projectName,
+            athlete_id: reviewData.athleteId,
+            athlete_name: reviewData.athleteName,
+            rating: reviewData.rating,
+            comment: reviewData.comment
+        }]);
         
-        setCreators(prev => prev.map(creator => {
-          if (creator.id === creatorId) {
-            const newRatingsCount = creator.ratingsCount + 1;
-            const newTotalRating = (creator.rating * creator.ratingsCount) + newReview.rating;
-            const newAverageRating = parseFloat((newTotalRating / newRatingsCount).toFixed(2));
-            return {
-              ...creator,
-              rating: newAverageRating,
-              ratingsCount: newRatingsCount,
-              reviews: [newReview, ...creator.reviews],
-            };
-          }
-          return creator;
-        }));
-  }, []);
+        if (error) return;
+
+        // 2. Recalculate Average (Simple approach for MVP: Fetch all and update, or use DB Trigger/Function)
+        // For now, we rely on the next fetch or we can trigger a specific RPC if created.
+        // Here, assuming DB trigger handles rating average, or we update it manually:
+        
+        const creator = creators.find(c => c.id === creatorId);
+        if (creator) {
+            const newCount = creator.ratingsCount + 1;
+            const newTotal = (creator.rating * creator.ratingsCount) + reviewData.rating;
+            const newAvg = newTotal / newCount;
+            
+            await supabase.from('profiles').update({
+                rating: newAvg,
+                ratings_count: newCount
+            }).eq('id', creatorId);
+        }
+
+        fetchCreators();
+  }, [creators, fetchCreators]);
 
   const getCreatorById = useCallback((creatorId: string) => {
     return creators.find(c => c.id === creatorId);
   }, [creators]);
 
   const upgradeToPro = useCallback(async (creatorId: string) => {
-        setCreators(prev => prev.map(c => c.id === creatorId ? { ...c, isPro: true } : c));
-  }, []);
+        const { error } = await supabase.from('profiles').update({ is_pro: true }).eq('id', creatorId);
+        if(!error) fetchCreators();
+  }, [fetchCreators]);
 
   const updateAvailability = useCallback(async (creatorId: string, availability: string) => {
-        setCreators(prev => prev.map(c => c.id === creatorId ? { ...c, availability } : c));
-  }, []);
+        const { error } = await supabase.from('profiles').update({ availability }).eq('id', creatorId);
+        if(!error) fetchCreators();
+  }, [fetchCreators]);
 
   return (
     <CreatorsContext.Provider value={{ creators, loading, addCreator, updateCreatorProfile, addRating, getCreatorById, upgradeToPro, updateAvailability }}>

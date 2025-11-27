@@ -7,7 +7,8 @@ import Rating from '../components/ui/Rating';
 import { Button } from '../components/ui/Button';
 import { ArrowLeft, MessageSquare, Briefcase, CheckCircle, Loader2 } from 'lucide-react';
 import { useProjects } from '../hooks/useProjects';
-import { cn } from '../lib/utils';
+import { cn, calculateLeague } from '../lib/utils';
+import { LeagueBadge } from '../components/ui/LeagueBadge';
 
 const AvailabilityIndicator: React.FC<{ availability?: string }> = ({ availability }) => {
     const statusStyles: { [key: string]: { text: string; bg: string; dot: string } } = {
@@ -70,14 +71,8 @@ const CreatorProfilePage: React.FC = () => {
 
   const displayProfile = richCreatorProfile 
     ? {
-        username: richCreatorProfile.username,
-        profilePictureUrl: richCreatorProfile.profilePictureUrl,
-        rating: richCreatorProfile.rating,
-        ratingsCount: richCreatorProfile.ratingsCount,
-        bio: richCreatorProfile.bio,
-        reviews: richCreatorProfile.reviews,
-        portfolio: richCreatorProfile.portfolio || [],
-        availability: richCreatorProfile.availability
+        ...richCreatorProfile,
+        league: calculateLeague(richCreatorProfile)
       }
     : {
         username: userAsCreator!.name,
@@ -88,6 +83,8 @@ const CreatorProfilePage: React.FC = () => {
         reviews: [],
         portfolio: [],
         availability: 'Available',
+        isPro: false,
+        league: 'Rookie' as const
       };
 
   return (
@@ -104,11 +101,15 @@ const CreatorProfilePage: React.FC = () => {
             alt={displayProfile.username} 
             className="w-40 h-40 rounded-full mx-auto md:mx-0 object-cover border-4 border-neutral-700 bg-neutral-700"
           />
-          <h1 className="text-3xl font-bold text-white mt-4">{displayProfile.username}</h1>
-          <div className="mt-2">
-            <AvailabilityIndicator availability={displayProfile.availability} />
+          <h1 className="text-3xl font-bold text-white mt-4 flex items-center justify-center md:justify-start gap-3">
+              {displayProfile.username}
+          </h1>
+          <div className="mt-2 flex flex-col md:flex-row gap-2 items-center md:items-start">
+             <LeagueBadge league={displayProfile.league} />
+             <AvailabilityIndicator availability={displayProfile.availability} />
           </div>
-          <div className="mt-2 flex items-center justify-center md:justify-start space-x-2">
+
+          <div className="mt-4 flex items-center justify-center md:justify-start space-x-2">
             <Rating value={displayProfile.rating} readonly={true} />
             <span className="text-gray-400">({displayProfile.ratingsCount} ratings)</span>
           </div>

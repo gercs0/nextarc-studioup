@@ -1,9 +1,9 @@
 
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
+
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole } from '../types';
-import { GOOGLE_CLIENT_ID } from '../constants';
+import { supabase } from '../lib/supabase';
 import { sendEmail } from '../services/emailService';
-import { parseJwt } from '../lib/utils';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -23,180 +23,260 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_STORAGE_KEY = 'nextarc_users';
-const SESSION_STORAGE_KEY = 'nextarc_session';
-
-const getUsersFromStorage = (): User[] => {
-    try {
-        const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-        if (storedUsers) {
-            return JSON.parse(storedUsers);
-        }
-        // Start with an empty list for a real production feel
-        return [];
-    } catch (error) {
-        console.error("Failed to initialize users", error);
-        return [];
-    }
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize currentUser synchronously from localStorage to prevent auth flash
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-      try {
-          const session = localStorage.getItem(SESSION_STORAGE_KEY);
-          return session ? JSON.parse(session) : null;
-      } catch {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [allUsersCache, setAllUsersCache] = useState<User[]>([]); // Cache for getAllUsers
+
+  // Fetch user profile from 'profiles' table
+  const fetchProfile = async (userId: string, email: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+          // It's possible the auth user exists but profile trigger hasn't run or failed
+          // For now, return null and let the calling function handle it
           return null;
       }
-  });
-  
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<User[]>(getUsersFromStorage);
 
-  useEffect(() => {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  }, [users]);
+      return {
+        id: data.id,
+        email: email,
+        name: data.name,
+        role: data.role as UserRole,
+        verified: data.verified,
+        isVerified: data.is_verified,
+        twoFactorEnabled: false, 
+        savedProjects: data.saved_projects || [],
+        isAdmin: data.is_admin || false,
+      };
+    } catch (err) {
+      console.error("Profile fetch error", err);
+      return null;
+    }
+  };
 
-  // Sync current user with users list in case of updates
+  // Initialize Auth
   useEffect(() => {
-      if (currentUser) {
-          const freshUser = users.find(u => u.id === currentUser.id);
-          if (freshUser && JSON.stringify(freshUser) !== JSON.stringify(currentUser)) {
-              setCurrentUser(freshUser);
-              localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(freshUser));
-          }
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = await fetchProfile(session.user.id, session.user.email!);
+        setCurrentUser(user);
       }
-  }, [users, currentUser]);
+      setLoading(false);
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        // Add a small delay to allow for profile creation/updates if this is a new signup
+        setTimeout(async () => {
+            const user = await fetchProfile(session.user.id, session.user.email!);
+            setCurrentUser(user);
+        }, 500);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = useCallback(async (email: string, password?: string, role?: UserRole): Promise<User> => {
-    // No simulation delays - real synchronous check against local DB
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!user) {
-        throw new Error("User not found.");
-    }
-    
-    if (user.password !== password) {
-        throw new Error("Invalid password.");
-    }
-    
-    if (role && user.role !== role) {
-        throw new Error(`Account exists but is registered as a ${user.role}, not ${role}.`);
+    if (!password) throw new Error("Password required");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error("Login failed");
+
+    // Check profile role
+    const profile = await fetchProfile(data.user.id, data.user.email!);
+    if (profile && role && profile.role !== role) {
+        await supabase.auth.signOut();
+        throw new Error(`This account is registered as a ${profile.role}, not ${role}.`);
     }
 
-    setCurrentUser(user);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
-    return user;
-  }, [users]);
+    return profile!;
+  }, []);
 
   const signup = useCallback(async (name: string, email: string, role: UserRole, password?: string): Promise<User> => {
-    // No simulation delays
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        throw new Error("An account with this email already exists.");
-    }
-    const newUser: User = {
-        id: `user_${Date.now()}`,
-        name,
-        email,
-        role,
-        password,
-        verified: role === 'athlete', // Athletes are auto-verified, creators need manual verification
-        isVerified: role === 'athlete', // for athlete verification badge
-        twoFactorEnabled: false,
-        savedProjects: [],
-    };
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newUser));
-    sendEmail(newUser.email, "Welcome to NextArc Studio!", `Hi ${newUser.name},\n\nWelcome! Your account has been created.`);
-    if (role === 'creator') {
-      sendEmail('admin@nextarc.io', 'New Creator Signup', `A new creator, ${newUser.name} (${newUser.email}), has signed up and is awaiting verification.`);
-    }
-    return newUser;
-  }, [users]);
+    if (!password) throw new Error("Password required");
 
-  const logout = useCallback(() => {
+    // 1. Sign up in Auth
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name, role } // Meta data for Supabase Auth
+      }
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error("Signup failed");
+
+    // 2. Create Profile Entry manually
+    // Note: In a production Supabase app, you often use a Database Trigger on auth.users to create this.
+    // Here we do it client-side for the MVP.
+    
+    const dbProfilePayload = {
+        id: data.user.id,
+        name: name,
+        email: email,
+        role: role,
+        verified: role === 'athlete', // Athletes auto-verified for MVP
+        is_verified: role === 'athlete',
+        saved_projects: [],
+        is_admin: false,
+    };
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([dbProfilePayload]);
+
+    if (profileError) {
+      console.error("Error creating profile row:", profileError);
+    }
+
+    const user: User = { 
+        id: data.user.id,
+        email,
+        name,
+        role,
+        verified: dbProfilePayload.verified,
+        isVerified: dbProfilePayload.is_verified,
+        savedProjects: [],
+        isAdmin: false
+    };
+    
+    setCurrentUser(user);
+
+    sendEmail(email, "Welcome to NextArc Studio!", `Hi ${name},\n\nWelcome! Your account has been created.`);
+    
+    return user;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
-    localStorage.removeItem(SESSION_STORAGE_KEY);
   }, []);
 
   const loginWithGoogle = useCallback(async (credentialResponse: any): Promise<User> => {
-    if (!credentialResponse.credential) {
-        throw new Error("Google authentication failed.");
-    }
+      // Note: Supabase Google Login typically requires a redirect flow or signInWithIdToken if configured.
+      // Since we are using a specific anon key, we assume Supabase Auth is configured.
+      
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: credentialResponse.credential,
+      });
 
-    const payload = parseJwt(credentialResponse.credential);
-    if (!payload) {
-        throw new Error("Invalid Google token.");
-    }
-
-    const email = payload.email;
-    const name = payload.name;
-    const picture = payload.picture;
-
-    // Check if user exists
-    let user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!user) {
-        // Create new user from Google data
-        user = {
-            id: `user_google_${Date.now()}`,
-            name: name,
-            email: email,
-            role: 'athlete', // Default to athlete for Google Login
-            verified: true,
-            isVerified: true,
-            twoFactorEnabled: false,
-            savedProjects: [],
-            password: 'google-auth-linked',
-        };
-        setUsers(prev => [...prev, user!]);
-    }
-
-    setCurrentUser(user);
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(user));
-    return user;
-  }, [users]);
+      if (error || !data.user) throw new Error("Google Login failed with Supabase.");
+      
+      let profile = await fetchProfile(data.user.id, data.user.email!);
+      
+      if (!profile) {
+           // First time login, create profile
+           const dbProfilePayload = {
+              id: data.user.id,
+              name: data.user.user_metadata.full_name || 'Google User',
+              email: data.user.email,
+              role: 'athlete', // Default to athlete for Google Signups
+              verified: true,
+              is_verified: true,
+              saved_projects: [],
+              is_admin: false
+            };
+            
+            await supabase.from('profiles').insert([dbProfilePayload]);
+            
+            profile = {
+                id: dbProfilePayload.id,
+                name: dbProfilePayload.name as string,
+                email: data.user.email!,
+                role: 'athlete',
+                verified: true,
+                isVerified: true,
+                savedProjects: [],
+                isAdmin: false
+            };
+      }
+      
+      return profile;
+  }, []);
 
   const getAllUsers = useCallback(async (): Promise<User[]> => {
-    return users;
-  }, [users]);
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) return [];
+    
+    const mapped: User[] = data.map((p: any) => ({
+        id: p.id,
+        email: p.email,
+        name: p.name,
+        role: p.role,
+        verified: p.verified,
+        isVerified: p.is_verified,
+        savedProjects: p.saved_projects || [],
+        isAdmin: p.is_admin
+    }));
+    setAllUsersCache(mapped);
+    return mapped;
+  }, []);
 
   const verifyCreator = useCallback(async (userId: string): Promise<void> => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, verified: true } : u));
+    await supabase.from('profiles').update({ verified: true }).eq('id', userId);
+    // Update local state if necessary
+    setAllUsersCache(prev => prev.map(u => u.id === userId ? { ...u, verified: true } : u));
   }, []);
   
   const getUserById = useCallback((userId: string) => {
-    return users.find(u => u.id === userId);
-  }, [users]);
+      return allUsersCache.find(u => u.id === userId); 
+  }, [allUsersCache]);
   
   const verifyAthlete = useCallback(async (userId: string): Promise<void> => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: true } : u));
+     await supabase.from('profiles').update({ is_verified: true }).eq('id', userId);
   }, []);
 
   const saveProject = useCallback(async (projectId: string): Promise<void> => {
     if (!currentUser) return;
-    const updatedUser = { ...currentUser, savedProjects: [...(currentUser.savedProjects || []), projectId] };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
+    const newSaved = [...(currentUser.savedProjects || []), projectId];
+    
+    const { error } = await supabase
+        .from('profiles')
+        .update({ saved_projects: newSaved })
+        .eq('id', currentUser.id);
+
+    if (!error) {
+        setCurrentUser(prev => prev ? { ...prev, savedProjects: newSaved } : null);
+    }
   }, [currentUser]);
 
   const unsaveProject = useCallback(async (projectId: string): Promise<void> => {
     if (!currentUser) return;
-    const updatedUser = { ...currentUser, savedProjects: (currentUser.savedProjects || []).filter(id => id !== projectId) };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
+    const newSaved = (currentUser.savedProjects || []).filter(id => id !== projectId);
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ saved_projects: newSaved })
+        .eq('id', currentUser.id);
+
+    if (!error) {
+        setCurrentUser(prev => prev ? { ...prev, savedProjects: newSaved } : null);
+    }
   }, [currentUser]);
   
   const toggle2FA = useCallback(async (enabled: boolean): Promise<void> => {
-    if (!currentUser) return;
-    const updatedUser = { ...currentUser, twoFactorEnabled: enabled };
-    setCurrentUser(updatedUser);
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedUser));
+      if (!currentUser) return;
+      // Supabase MFA requires specific API calls. For MVP, we simulate state update.
+      setCurrentUser(prev => prev ? { ...prev, twoFactorEnabled: enabled } : null);
   }, [currentUser]);
 
 
@@ -205,12 +285,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

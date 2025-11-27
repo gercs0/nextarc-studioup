@@ -1,54 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NextArc | Athlete & Creator Marketplace</title>
-    <meta name="description" content="The marketplace for athletes to commission content from professional creators. Post projects, receive offers, and get high-quality content delivered." />
+    <title>NextArc | Capture The Hype</title>
+    <meta name="description" content="The marketplace for athletes to hire professional creators. Post requests, receive offers, and get high-quality content delivered." />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://nextarc.studio/">
-    <meta property="og:title" content="NextArc | Athlete & Creator Marketplace">
-    <meta property="og:description" content="The marketplace for athletes to commission content from professional creators.">
+    <meta property="og:title" content="NextArc | Capture The Hype">
+    <meta property="og:description" content="The marketplace for athletes to hire content creators.">
     <meta property="og:image" content="https://picsum.photos/1200/630?grayscale&blur=2">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://nextarc.studio/">
-    <meta property="twitter:title" content="NextArc | Athlete & Creator Marketplace">
-    <meta property="twitter:description" content="The marketplace for athletes to commission content from professional creators.">
+    <meta property="twitter:title" content="NextArc | Capture The Hype">
+    <meta property="twitter:description" content="The marketplace for athletes to hire content creators.">
     <meta property="twitter:image" content="https://picsum.photos/1200/630?grayscale&blur=2">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              syne: ['Syne', 'sans-serif'],
+            },
+            colors: {
+              primary: '#FF4D00',
+              dark: '#050810',
+              card: '#0A0A0A',
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              }
+            },
+            backgroundSize: {
+              '300%': '300%',
+            }
+          }
+        }
+      }
+    </script>
     <style>
       body {
         font-family: 'Inter', sans-serif;
         background-color: #050810;
         color: #E6E6E6;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
       }
-      .noise-bg {
-        position: relative;
+      
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Syne', sans-serif;
       }
-      .noise-bg::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="a" x="0" y="0" width="100%" height="100%"><feTurbulence baseFrequency=".7" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23a)"/></svg>');
-        opacity: 0.025;
-        z-index: -1;
-        pointer-events: none;
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
       }
-      .ember-glow {
-        text-shadow: 0 0 8px rgba(255, 77, 0, 0.7), 0 0 16px rgba(255, 77, 0, 0.5);
+      ::-webkit-scrollbar-track {
+        background: #050810; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333; 
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+      }
+
+      .text-glow {
+        text-shadow: 0 0 20px rgba(255, 77, 0, 0.5);
+      }
+      
+      .btn-glow {
+        box-shadow: 0 0 20px rgba(255, 77, 0, 0.3);
+      }
+      .btn-glow:hover {
+        box-shadow: 0 0 30px rgba(255, 77, 0, 0.6);
       }
     </style>
   <script type="importmap">
@@ -65,7 +111,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "clsx": "https://aistudiocdn.com/clsx@^2.1.1",
-    "class-variance-authority": "https://aistudiocdn.com/class-variance-authority@^0.7.1"
+    "class-variance-authority": "https://aistudiocdn.com/class-variance-authority@^0.7.1",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.45.0"
   }
 }
 </script>

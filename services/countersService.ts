@@ -1,76 +1,79 @@
 
 import { Counters } from '../types';
+import { supabase } from '../lib/supabase';
 import { INITIAL_FOLLOWER_COUNT } from '../constants';
 
 const COUNTERS_KEY = 'globalCounters';
-const USERS_KEY = 'nextarc_users';
-const PROJECTS_KEY = 'projects';
 
-const initialCounters: Counters = {
-  followers: INITIAL_FOLLOWER_COUNT,
-  athletes: 0,
-  projects: 0,
-  completed: 0,
-};
-
-const getRealCounts = (): Partial<Counters> => {
+// Keep followers simulated in local storage as "Community Size"
+const getStoredFollowers = (): number => {
     try {
-        const storedUsers = localStorage.getItem(USERS_KEY);
-        const storedProjects = localStorage.getItem(PROJECTS_KEY);
-        
-        const users = storedUsers ? JSON.parse(storedUsers) : [];
-        const projects = storedProjects ? JSON.parse(storedProjects) : [];
-
-        const athleteCount = Array.isArray(users) ? users.filter((u: any) => u.role === 'athlete').length : 0;
-        const projectCount = Array.isArray(projects) ? projects.length : 0;
-        const completedCount = Array.isArray(projects) ? projects.filter((p: any) => p.status === 'completed').length : 0;
-
-        return {
-            athletes: athleteCount,
-            projects: projectCount,
-            completed: completedCount
-        };
-    } catch (e) {
-        return { athletes: 0, projects: 0, completed: 0 };
-    }
-}
-
-const getBaseCounters = async (): Promise<Counters> => {
-  try {
-    const storedCounters = localStorage.getItem(COUNTERS_KEY);
-    const realCounts = getRealCounts();
-
-    if (storedCounters) {
-      const parsed = JSON.parse(storedCounters);
-      // Merge stored counters (like followers) with real-time database counts
-      return { ...parsed, ...realCounts };
-    } else {
-      const newCounters = { ...initialCounters, ...realCounts };
-      localStorage.setItem(COUNTERS_KEY, JSON.stringify(newCounters));
-      return newCounters;
-    }
-  } catch (error) {
-    console.error("Failed to get base counters", error);
-    return initialCounters;
-  }
+        const stored = localStorage.getItem(COUNTERS_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            return parsed.followers || INITIAL_FOLLOWER_COUNT;
+        }
+    } catch(e) {}
+    return INITIAL_FOLLOWER_COUNT;
 };
 
 export const getLiveCounters = async (): Promise<Counters> => {
-    const baseCounters = await getBaseCounters();
-    // Just return the real base counters without fake fluctuation
-    return baseCounters;
+    try {
+        // 1. Athletes Count
+        const { count: athleteCount } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('role', 'athlete');
+
+        // 2. Projects Count (Total)
+        const { count: projectCount } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true });
+
+        // 3. Completed Projects
+        const { count: completedCount } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'completed');
+            
+        const followers = getStoredFollowers();
+
+        return {
+            followers,
+            athletes: athleteCount || 0,
+            projects: projectCount || 0,
+            completed: completedCount || 0
+        };
+    } catch (error) {
+        console.error("Error fetching live counters:", error);
+        return {
+            followers: getStoredFollowers(),
+            athletes: 0,
+            projects: 0,
+            completed: 0
+        };
+    }
 };
 
 export const incrementCounter = async (key: keyof Counters, amount = 1): Promise<Counters> => {
-  const currentCounters = await getBaseCounters();
-  const newCounters = { ...currentCounters, [key]: currentCounters[key] + amount };
+  // We only manually increment 'followers' now, as others are derived from DB.
+  if (key === 'followers') {
+      const current = getStoredFollowers();
+      const newVal = current + amount;
+      const stored = localStorage.getItem(COUNTERS_KEY);
+      const parsed = stored ? JSON.parse(stored) : {};
+      
+      const newCounters = { ...parsed, followers: newVal };
+      localStorage.setItem(COUNTERS_KEY, JSON.stringify(newCounters));
+      
+      // Return a hybrid object for the caller
+      return getLiveCounters();
+  }
   
-  // We only store the 'followers' count manually, others are derived from DB length in getBaseCounters
-  // But for simplicity in this mock service, we update the object.
-  localStorage.setItem(COUNTERS_KEY, JSON.stringify(newCounters));
-  return newCounters;
+  // For other keys, we just return the live DB state
+  return getLiveCounters();
 };
 
 export const resetCounters = () => {
-    localStorage.setItem(COUNTERS_KEY, JSON.stringify(initialCounters));
+    localStorage.removeItem(COUNTERS_KEY);
 };

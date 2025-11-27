@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Notification } from '../types';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 interface NotificationsContextType {
   notifications: Notification[];

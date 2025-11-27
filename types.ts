@@ -1,5 +1,8 @@
 
+
 export type UserRole = 'athlete' | 'creator';
+
+export type League = 'Rookie' | 'Varsity' | 'Pro' | 'All-Star';
 
 export interface User {
   id: string;
@@ -11,6 +14,8 @@ export interface User {
   isVerified?: boolean; // For athlete verification
   twoFactorEnabled?: boolean;
   savedProjects?: string[];
+  isAdmin?: boolean;
+  isFoundingMember?: boolean;
 }
 
 export interface Review {
@@ -42,6 +47,8 @@ export interface Creator {
   portfolio: PortfolioItem[];
   isPro?: boolean;
   availability?: string;
+  league?: League; // Derived from stats
+  completedJobs?: number;
 }
 
 export interface Offer {
@@ -62,6 +69,7 @@ export interface Message {
   userName: string;
   text: string;
   timestamp: number;
+  videoTimestamp?: string; // For "Film Room" feedback (e.g., "00:45")
 }
 
 export interface Deliverable {

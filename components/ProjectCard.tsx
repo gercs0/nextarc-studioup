@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { Project } from '../types';
-import { Calendar, DollarSign, Bookmark, CheckCircle, Star, Loader2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, DollarSign, Bookmark, CheckCircle, ArrowRight, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from './ui/Button';
@@ -32,10 +31,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     setIsSaving(true);
     if (isSaved) {
         await unsaveProject(project.id);
-        addToast('Project unsaved!', 'success');
+        addToast('Request unsaved!', 'success');
     } else {
         await saveProject(project.id);
-        addToast('Project saved to your dashboard!', 'success');
+        addToast('Request saved!', 'success');
     }
     setIsSaving(false);
   };
@@ -45,42 +44,71 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   }
 
   return (
-    <div onClick={handleCardClick} className="cursor-pointer bg-neutral-900/50 border border-neutral-800 rounded-lg transition-all duration-300 hover:border-[#FF4D00]/50 hover:shadow-2xl hover:shadow-[#FF4D00]/10 group relative overflow-hidden">
-      {project.isFeatured && (
-        <div className="absolute top-0 right-0 bg-yellow-400 text-black px-3 py-1 text-xs font-bold rounded-bl-lg flex items-center z-10">
-          <Star className="h-3 w-3 mr-1" /> FEATURED
+    <div 
+      onClick={handleCardClick} 
+      className="group relative w-full bg-[#0A0A0A] rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#FF4D00]/30 transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,77,0,0.1)]"
+    >
+      {/* Image Header */}
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <img 
+            src={project.images[0] || 'https://picsum.photos/400/300?grayscale'} 
+            alt={project.serviceType}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:grayscale-0 grayscale-[50%] opacity-80 group-hover:opacity-100"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/20 to-transparent" />
+        
+        {/* Sport Tag */}
+        <div className="absolute top-4 left-4">
+             <span className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest text-white border border-white/10 group-hover:border-[#FF4D00]/50 transition-colors">
+                {project.sport}
+             </span>
         </div>
-      )}
-      <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${project.images[0] || 'https://picsum.photos/400/200?grayscale'})` }}>
+
+        {/* Save Button */}
+        <div className="absolute top-4 right-4 z-10">
+             {currentUser?.role === 'creator' && (
+                <button 
+                    onClick={handleSaveToggle}
+                    disabled={isSaving}
+                    className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-[#FF4D00] transition-colors border border-white/10"
+                >
+                    <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-white text-white' : 'text-white'}`} />
+                </button>
+            )}
+        </div>
+        
+        {/* Price Tag overlay on image */}
+        <div className="absolute bottom-4 right-4">
+            <div className="flex items-center text-white font-bold bg-[#FF4D00] px-3 py-1.5 rounded-lg shadow-lg">
+                <DollarSign size={14} strokeWidth={3} className="mr-0.5"/> 
+                <span className="text-sm font-syne">{project.budget}</span>
+            </div>
+        </div>
       </div>
-      <div className="p-5">
-        <div className="flex justify-between items-start">
-            <div>
-                 <p className="text-sm text-gray-400 flex items-center">
-                    {project.sport}
-                    {athlete?.isVerified && <CheckCircle className="h-4 w-4 ml-2 text-blue-400" title="Verified Athlete" />}
-                 </p>
-                 <h3 className="text-lg font-bold text-white truncate group-hover:text-[#FF4D00] transition-colors">{project.serviceType}</h3>
-            </div>
-            <div className="flex items-center text-lg font-bold text-green-400 bg-green-900/50 px-3 py-1 rounded-full">
-                <DollarSign size={16} className="mr-1"/> {project.budget}
-            </div>
+      
+      {/* Content Body */}
+      <div className="p-6 relative">
+        <div className="mb-4">
+             <h3 className="font-syne text-xl font-bold text-white group-hover:text-[#FF4D00] transition-colors leading-tight mb-2 truncate">
+                {project.serviceType}
+             </h3>
+             <div className="flex items-center text-xs font-medium text-gray-400">
+                <span className="text-white mr-1">{athlete?.name}</span>
+                {athlete?.isVerified && <CheckCircle className="h-3 w-3 text-[#FF4D00]" />}
+             </div>
         </div>
-        <p className="text-sm text-gray-400 mt-2 h-10 overflow-hidden">{project.description}</p>
-        <div className="mt-4 pt-4 border-t border-neutral-800 flex justify-between items-center text-sm text-gray-400">
-            <div className="flex items-center">
-                <Calendar size={14} className="mr-2" />
-                <span>Deadline: {new Date(project.deadline + 'T00:00:00').toLocaleDateString()}</span>
+        
+        <p className="text-sm text-gray-500 line-clamp-2 mb-6 h-10 leading-relaxed">
+            {project.description}
+        </p>
+        
+        <div className="flex justify-between items-center pt-4 border-t border-white/5">
+            <div className="flex items-center text-xs text-gray-500 font-medium">
+                <Calendar size={12} className="mr-1.5 text-gray-600" />
+                <span>Due {new Date(project.deadline + 'T00:00:00').toLocaleDateString()}</span>
             </div>
-            <div className="flex items-center gap-2">
-                 {currentUser?.role === 'creator' && (
-                    <Button variant="ghost" size="icon" onClick={handleSaveToggle} disabled={isSaving} className="h-8 w-8 hover:bg-neutral-700">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bookmark className={`h-4 w-4 ${isSaved ? 'text-[#FF4D00] fill-current' : 'text-gray-400'}`} />}
-                    </Button>
-                )}
-                <span className="text-sm font-semibold text-[#FF4D00] flex items-center group-hover:underline">
-                   View Project
-                </span>
+            <div className="text-[#FF4D00] text-xs font-bold uppercase tracking-wide flex items-center opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-300">
+                Details <ArrowRight size={12} className="ml-1" />
             </div>
         </div>
       </div>

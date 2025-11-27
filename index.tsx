@@ -1,7 +1,22 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+
+// Suppress common ResizeObserver loop limit exceeded error which is benign
+const originalError = console.error;
+console.error = (...args) => {
+  if (/ResizeObserver loop/.test(args[0])) {
+    return;
+  }
+  originalError.call(console, ...args);
+};
+
+window.addEventListener('error', (e) => {
+  if (e.message === 'ResizeObserver loop limit exceeded' || e.message === 'Script error.') {
+    e.stopImmediatePropagation();
+    return;
+  }
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

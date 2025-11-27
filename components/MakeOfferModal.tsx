@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
+import { ShieldCheck } from 'lucide-react';
 
 interface MakeOfferModalProps {
     project: Project;
@@ -22,8 +23,9 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ project, onClose, onSub
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!currentUser || currentUser.role !== 'creator' || !currentUser.verified) {
-            addToast('You must be a verified creator to make an offer.', 'error');
+        // Removed !currentUser.verified check to allow everyone to participate
+        if (!currentUser || currentUser.role !== 'creator') {
+            addToast('You must be a logged-in creator to make an offer.', 'error');
             return;
         }
 
@@ -52,18 +54,6 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ project, onClose, onSub
         )
     }
 
-    if (currentUser.role === 'creator' && !currentUser.verified) {
-        return (
-             <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={onClose}>
-                <div className="bg-neutral-900 rounded-lg shadow-xl p-8 w-full max-w-md text-center" onClick={e => e.stopPropagation()}>
-                    <h2 className="text-2xl font-bold mb-4 text-white">Account Pending Verification</h2>
-                    <p className="text-gray-400 mb-6">Your creator account is under review. Once verified, you will be able to make offers on projects.</p>
-                     <Button type="button" variant="outline" onClick={onClose}>Got It</Button>
-                </div>
-            </div>
-        )
-    }
-
     if (currentUser.role !== 'creator') {
         return (
              <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center" onClick={onClose}>
@@ -81,6 +71,16 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({ project, onClose, onSub
             <div className="bg-neutral-900 rounded-lg shadow-xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
                 <h2 className="text-2xl font-bold mb-1 text-white">Make an Offer</h2>
                 <p className="text-gray-400 mb-6">For "{project.serviceType}"</p>
+                
+                {!currentUser.verified && (
+                    <div className="bg-blue-900/20 border border-blue-500/30 p-3 rounded-lg mb-4 flex gap-3 items-start">
+                        <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
+                        <div className="text-xs text-blue-200">
+                            <strong>Note:</strong> You are currently unverified. You can still make offers, but getting verified helps you win more jobs.
+                        </div>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-1">Your Offer Amount ($)</label>

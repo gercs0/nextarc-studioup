@@ -1,5 +1,5 @@
 {
-  "name": "copy-of-nextarc-studio",
+  "name": "nextarc-studio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -19,7 +19,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "react": "^19.2.0",
     "clsx": "^2.1.1",
-    "class-variance-authority": "^0.7.1"
+    "class-variance-authority": "^0.7.1",
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

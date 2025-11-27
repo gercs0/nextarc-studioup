@@ -1,20 +1,30 @@
 
-// This is a simulated email service for the MVP.
-// In a real application, this would use a service like SendGrid, Mailgun, or AWS SES.
 
-/**
- * Simulates sending an email by logging the details to the console.
- * @param to - The recipient's email address.
- * @param subject - The subject line of the email.
- * @param body - The HTML or text body of the email.
- */
+import { supabase } from '../lib/supabase';
+
+// Real email service using Supabase Edge Functions and Resend.
+// Ensure you have deployed the 'send-email' function and set the RESEND_API_KEY secret.
+
 export const sendEmail = async (to: string, subject: string, body: string): Promise<void> => {
-  console.log("--- EMAIL SENT ---");
-  console.log(`To: ${to}`);
-  console.log(`Subject: ${subject}`);
-  console.log("Body:");
-  console.log(body);
-  console.log("------------------");
-  
-  // No delay - instant execution
+  try {
+    const { error } = await supabase.functions.invoke('send-email', {
+      body: { 
+        to, 
+        subject, 
+        html: body.replace(/\n/g, '<br>') // Simple conversion for text to HTML
+      },
+    });
+
+    if (error) {
+      console.error('Supabase Edge Function returned an error:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Failed to send email via Supabase Edge Function:', error);
+    // Fallback logging for development or if function is not deployed
+    console.log("--- EMAIL FALLBACK (Backend Unavailable) ---");
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log("Body:", body);
+  }
 };
