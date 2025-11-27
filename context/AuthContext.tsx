@@ -53,6 +53,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         twoFactorEnabled: false, 
         savedProjects: data.saved_projects || [],
         isAdmin: data.is_admin || false,
+        isPro: data.is_pro || false,
+        stripeAccountId: data.stripe_account_id
       };
     } catch (err) {
       console.error("Profile fetch error", err);
@@ -155,7 +157,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verified: dbProfilePayload.verified,
         isVerified: dbProfilePayload.is_verified,
         savedProjects: [],
-        isAdmin: false
+        isAdmin: false,
+        isPro: false
     };
     
     setCurrentUser(user);
@@ -206,7 +209,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 verified: true,
                 isVerified: true,
                 savedProjects: [],
-                isAdmin: false
+                isAdmin: false,
+                isPro: false
             };
       }
       
@@ -225,7 +229,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         verified: p.verified,
         isVerified: p.is_verified,
         savedProjects: p.saved_projects || [],
-        isAdmin: p.is_admin
+        isAdmin: p.is_admin,
+        isPro: p.is_pro
     }));
     setAllUsersCache(mapped);
     return mapped;

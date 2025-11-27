@@ -1,17 +1,20 @@
 
+
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from '../components/ui/Button';
-import { ShieldCheck, Lock, User } from 'lucide-react';
+import { ShieldCheck, Lock, User, CreditCard, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { onboardCreator } from '../services/stripeService';
 
 const SettingsPage: React.FC = () => {
     const { currentUser, toggle2FA } = useAuth();
     const { addToast } = useToast();
     const [is2FAEnabled, setIs2FAEnabled] = useState(currentUser?.twoFactorEnabled || false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isConnectingStripe, setIsConnectingStripe] = useState(false);
 
     const handle2FAToggle = async () => {
         setIsUpdating(true);
@@ -24,6 +27,18 @@ const SettingsPage: React.FC = () => {
             alert("2FA Enabled! In a real application, you would now scan a QR code.");
         }
         setIsUpdating(false);
+    };
+
+    const handleConnectStripe = async () => {
+        if (!currentUser) return;
+        setIsConnectingStripe(true);
+        try {
+            const url = await onboardCreator(currentUser.id, currentUser.email);
+            window.location.href = url;
+        } catch (error) {
+            addToast("Failed to initiate Stripe connection.", "error");
+            setIsConnectingStripe(false);
+        }
     };
     
     if (!currentUser) {
@@ -56,6 +71,36 @@ const SettingsPage: React.FC = () => {
                         <p><strong>Role:</strong> <span className="capitalize">{currentUser.role}</span></p>
                     </div>
                 </div>
+
+                {currentUser.role === 'creator' && (
+                    <div className="p-6">
+                        <h2 className="text-lg font-semibold text-white flex items-center"><CreditCard className="mr-3 h-5 w-5 text-green-400" /> Payout Settings</h2>
+                        <p className="text-sm text-gray-400 mt-2">Connect your bank account to receive payments securely via Stripe.</p>
+                        
+                        <div className="mt-4">
+                            {currentUser.stripeAccountId ? (
+                                <div className="bg-green-900/20 border border-green-500/30 rounded p-4 flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                                        <span className="text-green-400 font-semibold text-sm">Payouts Active</span>
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={handleConnectStripe} disabled={isConnectingStripe}>
+                                        Manage Stripe Account <ExternalLink className="ml-2 h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="bg-neutral-800/50 border border-neutral-700 rounded p-4">
+                                     <p className="text-xs text-yellow-500 mb-3 font-bold uppercase tracking-wide">Action Required</p>
+                                     <p className="text-sm text-gray-300 mb-4">You must connect a payout account before you can accept offers.</p>
+                                     <Button onClick={handleConnectStripe} disabled={isConnectingStripe} className="w-full sm:w-auto bg-[#635BFF] hover:bg-[#5349e0] text-white">
+                                         {isConnectingStripe ? 'Redirecting...' : 'Connect with Stripe'}
+                                     </Button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                  <div className="p-6">
                     <h2 className="text-lg font-semibold text-white flex items-center"><Lock className="mr-3 h-5 w-5" /> Change Password</h2>
                     <p className="text-sm text-gray-400 mt-2">For security reasons, this feature would typically involve an email confirmation flow. This is a placeholder for the MVP.</p>

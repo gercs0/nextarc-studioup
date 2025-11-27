@@ -1,11 +1,12 @@
 
+
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useCreators } from '../hooks/useCreators';
 import { useToast } from '../hooks/useToast';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { Check, Crown, User, Zap } from 'lucide-react';
+import { Check, Crown, User, Zap, BarChart3, Percent } from 'lucide-react';
 
 const ProPage: React.FC = () => {
     const { currentUser } = useAuth();
@@ -40,8 +41,8 @@ const ProPage: React.FC = () => {
     const proFeatures = [
         { name: "Pro Badge", description: "Stand out with a Pro badge on your profile and offers.", icon: Crown },
         { name: "Priority Placement", description: "Appear higher in search results for athletes.", icon: Zap },
-        { name: "Reduced Platform Fees", description: "Enjoy a lower platform fee on all completed projects (coming soon).", icon: Check },
-        { name: "Advanced Analytics", description: "Get insights into your earnings and performance (coming soon).", icon: Check },
+        { name: "Reduced Platform Fees", description: "Fees dropped to 4% on all completed projects.", icon: Percent },
+        { name: "Advanced Analytics", description: "Gain insights into your earnings, win rates, and market performance.", icon: BarChart3 },
     ];
 
 

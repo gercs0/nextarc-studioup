@@ -18,6 +18,7 @@ import { Input } from '../components/ui/Input';
 import { redirectToCheckout } from '../services/stripeService';
 import { useNotifications } from '../hooks/useNotifications';
 import { LeagueBadge } from '../components/ui/LeagueBadge';
+import ProAnalytics from '../components/ProAnalytics';
 
 // --- HUD Component ---
 const ProjectHUD: React.FC<{ status: ProjectStatus, hasDispute: boolean }> = ({ status, hasDispute }) => {
@@ -218,6 +219,7 @@ const DashboardPage: React.FC = () => {
 
     
     const handleAcceptOfferClick = (project: Project, offer: Offer) => {
+        // Trigger the secure checkout flow which redirects to Stripe
         redirectToCheckout(project, offer);
     };
     
@@ -324,6 +326,11 @@ const DashboardPage: React.FC = () => {
                 )}
             </div>
             
+            {/* Pro Analytics - Visible only to Pro Creators */}
+            {currentUser.role === 'creator' && currentUser.isPro && (
+                <ProAnalytics projects={projects} currentUser={currentUser} />
+            )}
+
             <div className="grid grid-cols-3 gap-4 mb-12">
                 {stats.map(stat => (
                     <div key={stat.label} className="bg-[#121212] border border-neutral-800 rounded-xl p-6 shadow-sm">

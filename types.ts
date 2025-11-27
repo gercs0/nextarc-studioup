@@ -16,6 +16,8 @@ export interface User {
   savedProjects?: string[];
   isAdmin?: boolean;
   isFoundingMember?: boolean;
+  stripeAccountId?: string; // For Stripe Connect Payouts
+  isPro?: boolean; // Subscription status
 }
 
 export interface Review {

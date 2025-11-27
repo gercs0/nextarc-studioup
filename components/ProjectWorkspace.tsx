@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Project, Deliverable, Milestone } from '../types';
 import { useProjects } from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
@@ -8,7 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { Button } from './ui/Button';
 import { Textarea } from './ui/Textarea';
-import { Send, Download, UploadCloud, Loader2, MessageSquare, DollarSign, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, FileText, Play, Clock, Copy, Lock } from 'lucide-react';
+import { Send, Download, UploadCloud, Loader2, MessageSquare, DollarSign, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, FileText, Play, Clock, Copy, Lock, Pause, SkipBack, SkipForward } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { cn } from '../lib/utils';
 import { Input } from './ui/Input';
@@ -67,70 +67,176 @@ const ChatPanel: React.FC<{ project: Project }> = ({ project }) => {
     const { addMessage } = useProjects();
     const [message, setMessage] = useState('');
     const [timestamp, setTimestamp] = useState('');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    // Determine the video source. Prefer deliverables first, then project files.
+    // Fallback to a placeholder if no video is found.
+    const videoSource = project.deliverables.find(d => d.fileUrl.endsWith('.mp4'))?.fileUrl 
+        || project.images.find(img => img.endsWith('.mp4')) 
+        || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"; 
+        // Using BigBuckBunny as a fallback for the MVP demo so the player always works
+
+    const formatTime = (timeInSeconds: number) => {
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    const handleTimeUpdate = () => {
+        if (videoRef.current) {
+            setCurrentTime(videoRef.current.currentTime);
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+         if (videoRef.current) {
+            setDuration(videoRef.current.duration);
+         }
+    };
+
+    const captureTimestamp = () => {
+        if (videoRef.current) {
+            const time = videoRef.current.currentTime;
+            setTimestamp(formatTime(time));
+            // Auto-pause when capturing for comment
+            videoRef.current.pause();
+            setIsPlaying(false);
+        }
+    };
+
+    const seekToTimestamp = (timeStr: string) => {
+        if (!timeStr) return;
+        const [mins, secs] = timeStr.split(':').map(Number);
+        const totalSeconds = (mins * 60) + secs;
+        if (videoRef.current && !isNaN(totalSeconds)) {
+            videoRef.current.currentTime = totalSeconds;
+            videoRef.current.pause(); // Pause to let them see the frame
+            setIsPlaying(false);
+        }
+    };
 
     const handleSendMessage = () => {
         if (!message.trim() || !currentUser) return;
-        const fullMessage = timestamp ? `[${timestamp}] ${message}` : message;
+        // Don't duplicate timestamp in text if it's already in the meta field
+        const fullMessage = message; 
         
         addMessage(project.id, {
             userId: currentUser.id,
             userName: currentUser.name,
             text: fullMessage,
-            videoTimestamp: timestamp
+            videoTimestamp: timestamp || undefined
         });
         setMessage('');
         setTimestamp('');
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 h-[500px]">
-            {/* Mock Video Player for "Film Room" vibe */}
-            <div className="md:w-1/2 bg-black rounded-lg flex items-center justify-center relative border border-neutral-800 group overflow-hidden">
-                <img src={project.images[0] || 'https://picsum.photos/800/450?grayscale'} className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
-                <div className="relative z-10 text-center">
-                    <Button variant="ghost" size="icon" className="h-16 w-16 rounded-full bg-white/10 hover:bg-[#FF4D00] text-white transition-all backdrop-blur-md">
-                        <Play className="h-8 w-8 ml-1" />
-                    </Button>
-                    <p className="text-neutral-500 text-xs mt-4 font-mono">FILM ROOM PREVIEW</p>
+        <div className="flex flex-col lg:flex-row gap-6 h-[600px] lg:h-[500px]">
+            {/* Professional Video Player */}
+            <div className="lg:w-3/5 bg-black rounded-lg flex flex-col border border-neutral-800 overflow-hidden relative group">
+                <div className="relative flex-grow bg-black flex items-center justify-center">
+                    <video 
+                        ref={videoRef}
+                        src={videoSource}
+                        className="w-full h-full max-h-[400px] object-contain"
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onClick={togglePlay}
+                    />
+                    {!isPlaying && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer" onClick={togglePlay}>
+                            <Play className="w-16 h-16 text-white opacity-80 hover:opacity-100 transition-opacity" fill="white" />
+                        </div>
+                    )}
                 </div>
-                {/* Mock Scrubber */}
-                <div className="absolute bottom-4 left-4 right-4 h-1 bg-neutral-700 rounded-full">
-                    <div className="w-1/3 h-full bg-[#FF4D00] relative">
-                         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow cursor-pointer"></div>
+                
+                {/* Custom Controls */}
+                <div className="bg-[#1A1A1A] p-3 border-t border-neutral-800">
+                    <div className="flex items-center gap-4 mb-2">
+                        <Button variant="ghost" size="icon" onClick={togglePlay} className="h-8 w-8 text-white hover:bg-white/10">
+                            {isPlaying ? <Pause size={16} fill="currentColor"/> : <Play size={16} fill="currentColor"/>}
+                        </Button>
+                        <div className="text-xs font-mono text-[#FF4D00]">
+                            {formatTime(currentTime)} <span className="text-neutral-500">/ {formatTime(duration)}</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max={duration || 100} 
+                            value={currentTime} 
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                if(videoRef.current) videoRef.current.currentTime = val;
+                                setCurrentTime(val);
+                            }}
+                            className="flex-grow h-1 bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-[#FF4D00]"
+                        />
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">
+                            {videoSource.includes('BigBuckBunny') ? "DEMO FOOTAGE" : "PROJECT MEDIA"}
+                        </div>
+                         <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={captureTimestamp}
+                            className="h-7 text-xs border-[#FF4D00]/50 text-[#FF4D00] hover:bg-[#FF4D00]/10"
+                        >
+                            <Clock className="w-3 h-3 mr-1.5" /> Capture Frame
+                        </Button>
                     </div>
                 </div>
             </div>
 
-            <div className="md:w-1/2 flex flex-col h-full">
-                <div className="flex-grow overflow-y-auto mb-4 p-4 bg-[#161616] rounded-lg flex flex-col-reverse border border-neutral-800">
+            {/* Chat & Feedback */}
+            <div className="lg:w-2/5 flex flex-col h-full">
+                <div className="flex-grow overflow-y-auto mb-4 p-4 bg-[#161616] rounded-lg flex flex-col-reverse border border-neutral-800 custom-scrollbar">
                     <div className="space-y-4">
                     {[...project.messages].reverse().map(msg => (
                         <div key={msg.id} className={`flex items-end gap-2 ${msg.userId === currentUser!.id ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`p-3 rounded-2xl max-w-[85%] text-sm border ${msg.userId === currentUser!.id ? 'bg-[#FF4D00]/10 border-[#FF4D00]/20 text-white' : 'bg-[#222] border-neutral-700 text-neutral-300'}`}>
+                            <div className={`p-3 rounded-2xl max-w-[90%] text-sm border ${msg.userId === currentUser!.id ? 'bg-[#FF4D00]/10 border-[#FF4D00]/20 text-white' : 'bg-[#222] border-neutral-700 text-neutral-300'}`}>
                                 <div className="flex justify-between items-center mb-1 gap-2">
                                     <span className="text-[10px] font-bold opacity-70 uppercase tracking-wide">{msg.userName}</span>
                                     {msg.videoTimestamp && (
-                                        <span className="text-[10px] font-mono bg-black/30 px-1.5 py-0.5 rounded text-[#FF4D00] flex items-center">
-                                            <Clock className="w-3 h-3 mr-1" /> {msg.videoTimestamp}
-                                        </span>
+                                        <button 
+                                            onClick={() => seekToTimestamp(msg.videoTimestamp!)}
+                                            className="text-[10px] font-mono bg-black/40 px-2 py-0.5 rounded text-[#FF4D00] flex items-center hover:bg-white hover:text-black transition-colors cursor-pointer border border-[#FF4D00]/30"
+                                        >
+                                            <Play className="w-2 h-2 mr-1 fill-current" /> {msg.videoTimestamp}
+                                        </button>
                                     )}
                                 </div>
-                                <p className="break-words leading-relaxed">{msg.text.replace(/\[\d{2}:\d{2}\]\s/, '')}</p>
+                                <p className="break-words leading-relaxed">{msg.text}</p>
                             </div>
                         </div>
                     ))}
                     </div>
                 </div>
-                <div className="flex flex-col gap-2 bg-[#1A1A1A] p-3 rounded-lg border border-neutral-800">
+                
+                <div className="flex flex-col gap-2 bg-[#1A1A1A] p-3 rounded-lg border border-neutral-800 shadow-xl">
                     <div className="flex items-center gap-2 mb-1">
                         <Clock className="w-3 h-3 text-neutral-500" />
                         <Input 
                             value={timestamp} 
                             onChange={e => setTimestamp(e.target.value)} 
                             placeholder="00:00" 
-                            className="h-6 w-20 text-xs bg-[#111] border-neutral-700 font-mono text-[#FF4D00] placeholder:text-neutral-600"
+                            className="h-6 w-20 text-xs bg-[#111] border-neutral-700 font-mono text-[#FF4D00] placeholder:text-neutral-600 focus:ring-[#FF4D00]"
                         />
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-wide">Timestamp Ref</span>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wide">Linked Time</span>
                     </div>
                     <div className="flex gap-2">
                         <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Type feedback..." className="flex-grow bg-[#111] border-neutral-700 focus:border-[#FF4D00]" onKeyDown={e => e.key === 'Enter' && handleSendMessage()}/>
@@ -221,8 +327,8 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                     '/dashboard'
                 );
                 addToast('File uploaded successfully!', 'success');
-            } catch (error) {
-                addToast('File upload failed.', 'error');
+            } catch (error: any) {
+                addToast(error.message || 'File upload failed.', 'error');
             } finally {
                 setIsUploading(false);
             }
@@ -261,9 +367,9 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
         );
     };
     
-    // Watermarking Logic simulation
-    // If project is not completed, we assume the file is preview only.
-    // In a real app with Cloudinary, we'd inject `l_watermark` into the URL.
+    // Locked if project is in progress and user is athlete (until they pay/approve)
+    // Actually, in the new flow, approval is what unlocks the clean download. 
+    // Before approval, show preview (which we already do in Film Room).
     const isLocked = project.status !== 'completed' && currentUser?.role === 'athlete';
 
     return (

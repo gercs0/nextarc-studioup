@@ -1,4 +1,5 @@
 
+
 export const SPORT_OPTIONS = [
     "Basketball", "Soccer", "Football", "Baseball", "Tennis", "Golf", "Skateboarding", 
     "Snowboarding", "Surfing", "MMA", "Boxing", "Athletics", "Other"
@@ -9,7 +10,8 @@ export const SERVICE_OPTIONS = [
     "Photography", "Motion Graphics", "Voiceover", "Other"
 ];
 
-export const PLATFORM_FEE_PERCENTAGE = 0.08; // 8%
+export const PLATFORM_FEE_PERCENTAGE = 0.08; // 8% Standard Fee
+export const PRO_PLATFORM_FEE_PERCENTAGE = 0.04; // 4% Pro Fee
 
 export const GOOGLE_CLIENT_ID: string = ""; 
 
