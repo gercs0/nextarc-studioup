@@ -7,7 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 import { Button } from './ui/Button';
 import { Textarea } from './ui/Textarea';
-import { Send, Download, UploadCloud, Loader2, MessageSquare, DollarSign, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, FileText, Play, Clock } from 'lucide-react';
+import { Send, Download, UploadCloud, Loader2, MessageSquare, DollarSign, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, FileText, Play, Clock, Copy, Lock } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { cn } from '../lib/utils';
 import { Input } from './ui/Input';
@@ -141,6 +141,57 @@ const ChatPanel: React.FC<{ project: Project }> = ({ project }) => {
     );
 };
 
+const SocialKit: React.FC = () => {
+    const { addToast } = useToast();
+    const caption = "Check out this highlight reel! 🎥🔥 Created on @NextArc.Studio #NextArcFamily #CaptureTheHype #SportsEdits";
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(caption);
+        addToast("Caption copied to clipboard!", "success");
+    };
+
+    return (
+        <div className="mt-6 bg-[#0F0F0F] border border-[#FF4D00]/30 rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-10">
+                <Send className="w-16 h-16 text-[#FF4D00]" />
+            </div>
+            <h5 className="text-xs font-bold text-[#FF4D00] uppercase tracking-widest mb-2">Viral Kit</h5>
+            <p className="text-sm text-gray-400 mb-3">Maximize your reach. Use our official tags.</p>
+            <div className="bg-black/50 p-3 rounded border border-neutral-800 flex items-center justify-between gap-2">
+                <code className="text-xs text-neutral-300 truncate">{caption}</code>
+                <Button size="sm" variant="ghost" onClick={copyToClipboard} className="h-8 w-8 p-0 shrink-0 text-white hover:bg-white/10">
+                    <Copy size={14} />
+                </Button>
+            </div>
+        </div>
+    );
+};
+
+const LegalApprovalModal: React.FC<{ onClose: () => void, onConfirm: () => void }> = ({ onClose, onConfirm }) => {
+    return (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-3 mb-4 text-[#FF4D00]">
+                    <ShieldAlert className="h-6 w-6" />
+                    <h3 className="text-lg font-bold font-syne">Transfer Ownership?</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">
+                    By approving this file, you agree to the <strong>NextArc Joint Ownership Terms</strong>:
+                </p>
+                <ul className="text-xs text-neutral-400 space-y-2 list-disc pl-5 mb-6">
+                    <li>The Athlete receives full commercial rights.</li>
+                    <li>NextArc Media retains a license for promotional use.</li>
+                    <li>The Creator retains a license for their portfolio.</li>
+                </ul>
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <Button onClick={onConfirm} className="bg-[#FF4D00] text-white hover:bg-[#e04400]">I Agree & Approve</Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
     const { currentUser } = useAuth();
     const { addDeliverable, requestRevision, approveDeliverable } = useProjects();
@@ -148,6 +199,7 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
     const { addNotification } = useNotifications();
     const [isUploading, setIsUploading] = useState(false);
     const [revisionModal, setRevisionModal] = useState<{ open: boolean; deliverableId: string | null }>({ open: false, deliverableId: null });
+    const [approvalModal, setApprovalModal] = useState<{ open: boolean; deliverableId: string | null }>({ open: false, deliverableId: null });
     const [revisionComment, setRevisionComment] = useState('');
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -187,9 +239,12 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
         setRevisionComment('');
     };
     
-    const handleApprove = (deliverableId: string) => {
-        approveDeliverable(project.id, deliverableId);
-        addToast('File approved!', 'success');
+    const confirmApprove = () => {
+        if(approvalModal.deliverableId) {
+            approveDeliverable(project.id, approvalModal.deliverableId);
+            addToast('File approved! Ownership transferred.', 'success');
+            setApprovalModal({ open: false, deliverableId: null });
+        }
     };
 
     const getStatusChip = (status: Deliverable['status']) => {
@@ -204,6 +259,11 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
             </span>
         );
     };
+    
+    // Watermarking Logic simulation
+    // If project is not completed, we assume the file is preview only.
+    // In a real app with Cloudinary, we'd inject `l_watermark` into the URL.
+    const isLocked = project.status !== 'completed' && currentUser?.role === 'athlete';
 
     return (
         <div>
@@ -235,9 +295,17 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                                 </div>
                                 <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                                     {getStatusChip(del.status)}
-                                     <a href={del.fileUrl} target="_blank" rel="noopener noreferrer" download>
-                                        <Button size="sm" variant="ghost" className="hover:bg-white/5 text-neutral-400 hover:text-white"><Download size={16} /></Button>
-                                    </a>
+                                    {isLocked && del.status !== 'approved' ? (
+                                        <Button size="sm" variant="ghost" disabled className="text-neutral-600 cursor-not-allowed">
+                                            <Lock size={14} className="mr-2"/> Locked
+                                        </Button>
+                                    ) : (
+                                        <a href={del.fileUrl} target="_blank" rel="noopener noreferrer" download>
+                                            <Button size="sm" variant="ghost" className="hover:bg-white/5 text-neutral-400 hover:text-white">
+                                                <Download size={16} />
+                                            </Button>
+                                        </a>
+                                    )}
                                 </div>
                            </div>
                            {del.status === 'revision_requested' && (
@@ -248,7 +316,7 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                            {currentUser?.role === 'athlete' && del.status === 'submitted' && (
                                <div className="mt-4 flex gap-3">
                                    <Button size="sm" variant="outline" className="flex-1 border-neutral-700" onClick={() => setRevisionModal({ open: true, deliverableId: del.id })}>Request Changes</Button>
-                                   <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white border-transparent" onClick={() => handleApprove(del.id)}>Approve File</Button>
+                                   <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white border-transparent" onClick={() => setApprovalModal({ open: true, deliverableId: del.id })}>Approve File</Button>
                                </div>
                            )}
                         </div>
@@ -261,6 +329,9 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                 )}
             </div>
 
+            {/* Social Kit for Viral Loop */}
+            {(project.deliverables || []).some(d => d.status === 'approved') && <SocialKit />}
+
              {revisionModal.open && (
                 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setRevisionModal({open: false, deliverableId: null})}>
                     <div className="bg-[#121212] border border-neutral-800 rounded-xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
@@ -272,6 +343,13 @@ const DeliverablesPanel: React.FC<{ project: Project }> = ({ project }) => {
                         </div>
                     </div>
                 </div>
+            )}
+            
+            {approvalModal.open && (
+                <LegalApprovalModal 
+                    onClose={() => setApprovalModal({open: false, deliverableId: null})} 
+                    onConfirm={confirmApprove} 
+                />
             )}
         </div>
     );

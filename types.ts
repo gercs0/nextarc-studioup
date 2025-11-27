@@ -137,6 +137,10 @@ export interface Project {
   questions?: Question[];
   milestones?: Milestone[];
   dispute?: Dispute;
+  // Media House Fields
+  isInternalProduction?: boolean;
+  socialUrl?: string;
+  socialStatus?: 'pending' | 'published';
 }
 
 export interface Counters {

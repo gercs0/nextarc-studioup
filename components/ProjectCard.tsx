@@ -1,10 +1,12 @@
+
 import React, { useState } from 'react';
 import { Project } from '../types';
-import { Calendar, DollarSign, Bookmark, CheckCircle, ArrowRight, MapPin } from 'lucide-react';
+import { Calendar, DollarSign, Bookmark, CheckCircle, ArrowRight, MapPin, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Button } from './ui/Button';
+import { cn } from '../lib/utils';
 
 interface ProjectCardProps {
   project: Project;
@@ -46,7 +48,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   return (
     <div 
       onClick={handleCardClick} 
-      className="group relative w-full bg-[#0A0A0A] rounded-2xl overflow-hidden cursor-pointer border border-white/5 hover:border-[#FF4D00]/30 transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,77,0,0.1)]"
+      className={cn(
+          "group relative w-full bg-[#0A0A0A] rounded-2xl overflow-hidden cursor-pointer border transition-all duration-500 hover:shadow-[0_0_30px_rgba(255,77,0,0.1)]",
+          project.isInternalProduction ? "border-[#FFD700]/50 hover:border-[#FFD700]" : "border-white/5 hover:border-[#FF4D00]/30"
+      )}
     >
       {/* Image Header */}
       <div className="relative aspect-[16/10] overflow-hidden">
@@ -57,6 +62,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/20 to-transparent" />
         
+        {/* Internal Production Badge */}
+        {project.isInternalProduction && (
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-[#FFD700] text-black text-[10px] font-bold px-4 py-1 rounded-b-lg shadow-[0_0_15px_rgba(255,215,0,0.5)] z-20 flex items-center gap-1 uppercase tracking-widest">
+                <Zap size={10} fill="black" /> Official Production
+             </div>
+        )}
+
         {/* Sport Tag */}
         <div className="absolute top-4 left-4">
              <span className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest text-white border border-white/10 group-hover:border-[#FF4D00]/50 transition-colors">
@@ -79,7 +91,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         
         {/* Price Tag overlay on image */}
         <div className="absolute bottom-4 right-4">
-            <div className="flex items-center text-white font-bold bg-[#FF4D00] px-3 py-1.5 rounded-lg shadow-lg">
+            <div className={cn(
+                "flex items-center text-white font-bold px-3 py-1.5 rounded-lg shadow-lg",
+                project.isInternalProduction ? "bg-[#FFD700] text-black" : "bg-[#FF4D00]"
+            )}>
                 <DollarSign size={14} strokeWidth={3} className="mr-0.5"/> 
                 <span className="text-sm font-syne">{project.budget}</span>
             </div>
@@ -89,7 +104,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
       {/* Content Body */}
       <div className="p-6 relative">
         <div className="mb-4">
-             <h3 className="font-syne text-xl font-bold text-white group-hover:text-[#FF4D00] transition-colors leading-tight mb-2 truncate">
+             <h3 className={cn(
+                 "font-syne text-xl font-bold transition-colors leading-tight mb-2 truncate",
+                 project.isInternalProduction ? "text-[#FFD700]" : "text-white group-hover:text-[#FF4D00]"
+             )}>
                 {project.serviceType}
              </h3>
              <div className="flex items-center text-xs font-medium text-gray-400">

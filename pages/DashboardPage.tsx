@@ -8,7 +8,7 @@ import { Project, Offer, ProjectStatus } from '../types';
 import { incrementCounter } from '../services/countersService';
 import { useToast } from '../hooks/useToast';
 import Rating from '../components/ui/Rating';
-import { Check, Clock, Inbox, User, DollarSign, Briefcase, TrendingUp, Send, CheckCircle, AlertTriangle, PlayCircle, Flag } from 'lucide-react';
+import { Check, Clock, Inbox, User, DollarSign, Briefcase, TrendingUp, Send, CheckCircle, AlertTriangle, PlayCircle, Flag, Share2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import ProjectWorkspace from '../components/ProjectWorkspace';
 import { Textarea } from '../components/ui/Textarea';
@@ -150,13 +150,14 @@ const OfferConversation: React.FC<{project: Project, offer: Offer}> = ({ project
 
 const DashboardPage: React.FC = () => {
     const { currentUser } = useAuth();
-    const { projects, updateProjectStatus } = useProjects();
+    const { projects, updateProjectStatus, submitSocialLink } = useProjects();
     const { addRating, getCreatorById } = useCreators();
     const { addToast } = useToast();
     const { addNotification } = useNotifications();
     const [ratingProject, setRatingProject] = useState<Project | null>(null);
     const [ratedProjects, setRatedProjects] = useState<Record<string, boolean>>({});
     const [activeTab, setActiveTab] = useState<ProjectStatus>('in-progress');
+    const [socialLinkInput, setSocialLinkInput] = useState<Record<string, string>>({});
 
 
     useEffect(() => {
@@ -266,6 +267,13 @@ const DashboardPage: React.FC = () => {
         setRatingProject(null);
     };
     
+    const handleSubmitSocialLink = (project: Project) => {
+        const url = socialLinkInput[project.id];
+        if (!url) return;
+        submitSocialLink(project.id, url);
+        addToast('Link submitted for verification! Reward incoming.', 'success');
+    };
+
     const getStatusBadge = (status: ProjectStatus) => {
         const baseClasses = 'px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full inline-flex items-center';
         switch(status) {
@@ -460,11 +468,34 @@ const DashboardPage: React.FC = () => {
                                         <div className="bg-[#1A1A1A] border border-neutral-800 p-6 rounded-lg text-center">
                                             <p className="font-bold text-green-400 mb-4 flex items-center justify-center gap-2"><CheckCircle size={20}/> Season Complete</p>
                                             {currentUser.role === 'athlete' && (
-                                                hasRated ? (
-                                                    <p className="text-neutral-500">You rated <Link to={`/creator/${creator.id}`} className="text-white hover:underline">{creator.username}</Link>.</p>
-                                                ) : (
-                                                    <Button variant="outline" onClick={() => setRatingProject(project)}>Rate Experience</Button>
-                                                )
+                                                <div className="space-y-4">
+                                                    {hasRated ? (
+                                                        <p className="text-neutral-500">You rated <Link to={`/creator/${creator.id}`} className="text-white hover:underline">{creator.username}</Link>.</p>
+                                                    ) : (
+                                                        <Button variant="outline" onClick={() => setRatingProject(project)}>Rate Experience</Button>
+                                                    )}
+
+                                                    <div className="mt-6 pt-6 border-t border-neutral-800">
+                                                        <h5 className="text-xs font-bold text-white uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Share2 size={12}/> Post Verification</h5>
+                                                        {project.socialStatus === 'published' ? (
+                                                             <p className="text-green-500 text-sm">Verified & Published!</p>
+                                                        ) : (
+                                                            <div className="flex max-w-sm mx-auto gap-2">
+                                                                <Input 
+                                                                    placeholder="Paste TikTok/Insta link..." 
+                                                                    className="text-xs" 
+                                                                    value={socialLinkInput[project.id] || ''} 
+                                                                    onChange={(e) => setSocialLinkInput({...socialLinkInput, [project.id]: e.target.value})}
+                                                                    disabled={project.socialStatus === 'pending'}
+                                                                />
+                                                                <Button size="sm" onClick={() => handleSubmitSocialLink(project)} disabled={project.socialStatus === 'pending' || !socialLinkInput[project.id]}>
+                                                                    {project.socialStatus === 'pending' ? 'Pending' : 'Submit'}
+                                                                </Button>
+                                                            </div>
+                                                        )}
+                                                        <p className="text-[10px] text-gray-500 mt-1">Submit your post link to get featured on NextArc.</p>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )}

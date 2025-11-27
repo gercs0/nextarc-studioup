@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const LegalSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -39,9 +40,15 @@ const LegalPage: React.FC = () => {
         <p>Payments are processed through our secure payment gateway. The funds are held in a holding account until the Athlete marks the project as "Completed". Upon completion, the funds (minus the Platform Fee) are released to the Creator.</p>
         <p>NextArc Studio is not responsible for any disputes over payments between Users, but we may provide mediation assistance at our discretion.</p>
         
-        <h4>5. Intellectual Property</h4>
+        <h4>5. Intellectual Property & Joint Ownership</h4>
         <p>The content, features, and functionality of the Platform itself are and will remain the exclusive property of NextArc Studio and its licensors.</p>
-        <p>Upon full payment to the Creator, the Athlete is granted a license to use the final delivered work as specified in their Project brief. The Creator retains the right to use the work in their personal portfolio unless otherwise agreed upon in writing.</p>
+        <p><strong>Joint Ownership Model:</strong> Upon full payment to the Creator, the ownership of the final delivered work is transferred to a <strong>Joint Ownership</strong> structure:</p>
+        <ul>
+            <li><strong>The Athlete:</strong> Grants full commercial and personal rights to distribute, modify, and publish the content.</li>
+            <li><strong>NextArc Media:</strong> Retains a perpetual, non-exclusive, royalty-free license to use the content for promotional purposes, inclusion in the NextArc Showcase, and distribution on NextArc-owned social media channels.</li>
+            <li><strong>The Creator:</strong> Retains a perpetual, non-exclusive "Portfolio License" to display the work in personal portfolios and showreels for the purpose of self-promotion.</li>
+        </ul>
+        <p>By using the platform, you explicitly agree that NextArc Media has the right to re-publish successful projects to promote the community and the creators involved.</p>
 
         <h4>6. Limitation of Liability</h4>
         <p>In no event shall NextArc Studio, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>

@@ -24,6 +24,8 @@ interface ProjectsContextType {
   releaseMilestone: (projectId: string, milestoneId: string) => Promise<void>;
   requestRevision: (projectId: string, deliverableId: string, comment: string) => Promise<void>;
   approveDeliverable: (projectId: string, deliverableId: string) => Promise<void>;
+  submitSocialLink: (projectId: string, url: string) => Promise<void>;
+  publishProject: (projectId: string) => Promise<void>;
 }
 
 export const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
@@ -113,7 +115,7 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
         questions: (p.questions || []).map((q: any) => ({
             id: q.id,
             text: q.text,
-            askerId: q.asker_id,
+            asker_id: q.asker_id,
             askerName: q.asker_name,
             timestamp: new Date(q.created_at).getTime(),
             answer: q.answer,
@@ -131,7 +133,10 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
             raisedBy: p.disputes[0].raised_by,
             timestamp: new Date(p.disputes[0].created_at).getTime()
         } : undefined,
-        isFeatured: p.is_featured
+        isFeatured: p.is_featured,
+        isInternalProduction: p.is_internal_production,
+        socialUrl: p.social_url,
+        socialStatus: p.social_status
     }));
 
     setProjects(formattedProjects);
@@ -155,7 +160,8 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
             description: projectData.description,
             images: projectData.images,
             status: 'open',
-            is_featured: isFeatured
+            is_featured: isFeatured,
+            is_internal_production: projectData.isInternalProduction
         };
 
         const { error } = await supabase.from('projects').insert([dbPayload]);
@@ -307,10 +313,27 @@ export const ProjectsProvider: React.FC<{ children: ReactNode }> = ({ children }
         if(!error) fetchProjects();
   }, [fetchProjects]);
 
+  const submitSocialLink = useCallback(async (projectId: string, url: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ social_url: url, social_status: 'pending' })
+        .eq('id', projectId);
+      if (!error) fetchProjects();
+  }, [fetchProjects]);
+
+  const publishProject = useCallback(async (projectId: string) => {
+      const { error } = await supabase
+        .from('projects')
+        .update({ social_status: 'published' })
+        .eq('id', projectId);
+      if (!error) fetchProjects();
+  }, [fetchProjects]);
+
   return (
     <ProjectsContext.Provider value={{ 
         projects, loading, addProject, addOffer, acceptOffer, updateProjectStatus, getProjectById, addMessage, addDeliverable, addMessageToOffer,
-        raiseDispute, resolveDispute, addQuestion, addAnswer, fundMilestone, releaseMilestone, requestRevision, approveDeliverable
+        raiseDispute, resolveDispute, addQuestion, addAnswer, fundMilestone, releaseMilestone, requestRevision, approveDeliverable,
+        submitSocialLink, publishProject
     }}>
       {children}
     </ProjectsContext.Provider>

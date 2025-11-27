@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Counters } from '../types';
 import { getLiveCounters, resetCounters } from '../services/countersService';
-import { Zap, ShieldCheck, Users, ArrowRight, Play, FileUp, CreditCard, Handshake } from 'lucide-react';
+import { Zap, ShieldCheck, Users, ArrowRight, Play, FileUp, CreditCard, Handshake, Film } from 'lucide-react';
 import FeaturedCreators from '../components/FeaturedCreators';
 import Testimonials from '../components/Testimonials';
 
@@ -16,6 +16,20 @@ const HexIcon: React.FC<{ icon: React.ElementType, label: string }> = ({ icon: I
             <Icon className="relative z-10 w-6 h-6 md:w-8 md:h-8 text-[#FFD700] group-hover:text-[#FF4D00] transition-colors" />
         </div>
         <span className="font-syne font-bold text-white tracking-wide text-xs md:text-sm uppercase group-hover:text-[#FF4D00] transition-colors">{label}</span>
+    </div>
+);
+
+const ShowroomItem: React.FC<{ image: string, title: string, creator: string }> = ({ image, title, creator }) => (
+    <div className="relative aspect-[9/16] bg-neutral-900 rounded-xl overflow-hidden group cursor-pointer border border-neutral-800 hover:border-[#FF4D00]/50 transition-all">
+        <img src={image} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
+        <div className="absolute bottom-0 left-0 p-4">
+            <h4 className="font-syne font-bold text-white leading-tight">{title}</h4>
+            <p className="text-xs text-[#FF4D00] mt-1 font-bold uppercase tracking-wide">By {creator}</p>
+        </div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full p-4 backdrop-blur-sm">
+            <Play className="fill-white text-white" />
+        </div>
     </div>
 );
 
@@ -114,9 +128,43 @@ const HomePage: React.FC = () => {
                     </div>
                 </div>
             </section>
+            
+            {/* Showroom / Originals */}
+            <section className="bg-neutral-950 py-12 border-y border-neutral-800">
+                <div className="container mx-auto px-4">
+                     <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-2xl font-black text-white font-syne uppercase tracking-tighter flex items-center gap-2">
+                             <Film className="text-[#FF4D00]" /> NextArc Originals
+                        </h2>
+                        <a href="#" className="text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">View All</a>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                         <ShowroomItem 
+                             image="https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=600&fit=crop"
+                             title="Late Night Grinds"
+                             creator="PixelKing"
+                         />
+                          <ShowroomItem 
+                             image="https://images.unsplash.com/photo-1547347298-4074fc3086f0?q=80&w=600&fit=crop"
+                             title="Season Opener Hype"
+                             creator="LensMaster"
+                         />
+                          <ShowroomItem 
+                             image="https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=600&fit=crop"
+                             title="Track & Field Doc"
+                             creator="StoryTeller"
+                         />
+                          <ShowroomItem 
+                             image="https://images.unsplash.com/photo-1550950346-63d11b2cb04a?q=80&w=600&fit=crop"
+                             title="Underdog Story"
+                             creator="CinematicPro"
+                         />
+                    </div>
+                </div>
+            </section>
 
             {/* Stats Section - Minimal */}
-            <section className="border-y border-white/5 bg-[#0A0A0A]">
+            <section className="border-b border-white/5 bg-[#0A0A0A]">
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/5">
                         {[
