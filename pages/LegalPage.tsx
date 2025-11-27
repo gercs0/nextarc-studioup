@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 const LegalSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (

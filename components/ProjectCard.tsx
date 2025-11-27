@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Project } from '../types';
 import { Calendar, DollarSign, Bookmark, CheckCircle, ArrowRight, MapPin, Zap } from 'lucide-react';

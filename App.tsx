@@ -1,4 +1,4 @@
-import React, { Component, useEffect, ErrorInfo, ReactNode } from 'react';
+import React, { useEffect, ErrorInfo, ReactNode } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ProjectsProvider } from './context/ProjectsContext';
 import { ToastProvider } from './context/ToastContext';
@@ -41,7 +41,7 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = {
     hasError: false
   };
